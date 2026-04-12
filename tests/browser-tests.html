@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blank Canvas Browser Tests</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        background: #f5f7fb;
+        color: #10203a;
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      .summary {
+        margin-bottom: 16px;
+        font-weight: 700;
+      }
+
+      .pass {
+        color: #0f6b40;
+      }
+
+      .fail {
+        color: #b03817;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      li + li {
+        margin-top: 8px;
+      }
+
+      code {
+        font-family: Consolas, monospace;
+      }
+    </style>
+  </head>
+  <body data-test-status="running">
+    <h1>Blank Canvas Browser Tests</h1>
+    <p id="summary" class="summary">Running tests...</p>
+    <ul id="results"></ul>
+
+    <script src="../src/shared/core.js"></script>
+    <script src="../src/shared/defaults.js"></script>
+    <script src="../src/shared/debug.js"></script>
+    <script>
+      globalThis.chrome = globalThis.chrome || {
+        storage: {
+          sync: {
+            get: async (defaults) => defaults,
+            set: async () => undefined
+          },
+          onChanged: {
+            addListener: () => undefined,
+            removeListener: () => undefined
+          }
+        }
+      };
+    </script>
+    <script src="../src/shared/course-nav-utils.js"></script>
+    <script src="../src/shared/storage.js"></script>
+    <script src="../src/content/selectors.js"></script>
+    <script src="../src/content/assignment-utils.js"></script>
+    <script src="../src/content/assignment-display.js"></script>
+    <script src="../src/content/assignment-formatters.js"></script>
+    <script src="../src/content/assignment-dom.js"></script>
+    <script src="../src/content/assignment-api.js"></script>
+    <script src="../src/content/assignment-store-state.js"></script>
+    <script src="../src/content/assignments.js"></script>
+    <script src="../src/content/rules.js"></script>
+    <script src="../src/content/course-nav.js"></script>
+    <script src="../src/content/bootstrap.js"></script>
+    <script src="../src/content/dashboard-styles.js"></script>
+    <script src="../src/content/dashboard-view.js"></script>
+    <script src="./browser-tests.js"></script>
+  </body>
+</html>

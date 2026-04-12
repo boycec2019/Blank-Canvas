@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blank Canvas</title>
+    <link rel="stylesheet" href="./popup.css">
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="popup-header">
+        <div>
+          <p class="eyebrow">Canvas declutter</p>
+          <h1>Blank Canvas</h1>
+        </div>
+        <button type="button" id="open-options">Options</button>
+      </header>
+
+      <section class="panel todo-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Pending only</p>
+            <h2>To-do list</h2>
+          </div>
+          <button type="button" id="refresh-todo" class="secondary quiet-button">Refresh</button>
+        </div>
+        <p id="todo-summary">Open a Canvas tab to load pending assignments.</p>
+        <ul id="todo-list" class="todo-list" aria-live="polite">
+          <li class="todo-empty">Looking for assignments...</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <label class="toggle-row">
+          <span>
+            <strong>Enabled</strong>
+            <small>Turn the extension on or off.</small>
+          </span>
+          <input type="checkbox" name="enabled">
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Show dashboard to-do</strong>
+            <small>Adds the pending list to the Canvas dashboard page.</small>
+          </span>
+          <input type="checkbox" name="showDashboardTodoList">
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Hide sidebar</strong>
+            <small>Removes To Do and Recent Feedback.</small>
+          </span>
+          <input type="checkbox" name="hideRightSidebar">
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Hide search</strong>
+            <small>Removes the course search area.</small>
+          </span>
+          <input type="checkbox" name="hideDashboardSearch">
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Hide card images</strong>
+            <small>Removes large course card covers.</small>
+          </span>
+          <input type="checkbox" name="hideCourseCardImages">
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Hide card actions</strong>
+            <small>Removes the icon row at the bottom of cards.</small>
+          </span>
+          <input type="checkbox" name="hideCourseCardActions">
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Hide side nav extras</strong>
+            <small>Trims Groups, History, Search, Spark, and Help.</small>
+          </span>
+          <input type="checkbox" name="hideSecondaryNavItems">
+        </label>
+      </section>
+
+      <section class="panel">
+        <label class="toggle-row">
+          <span>
+            <strong>Debug mode</strong>
+            <small>Turns on console logs and richer reports.</small>
+          </span>
+          <input type="checkbox" name="debugMode">
+        </label>
+
+        <label class="toggle-row">
+          <span>
+            <strong>Preview mode</strong>
+            <small>Highlights matched elements instead of hiding them.</small>
+          </span>
+          <input type="checkbox" name="previewMode">
+        </label>
+      </section>
+
+      <section class="panel actions">
+        <button type="button" id="run-diagnostics">Run diagnostics</button>
+        <button type="button" id="reset-settings" class="secondary">Reset</button>
+      </section>
+
+      <section class="panel diagnostics">
+        <p id="status-text">Ready.</p>
+        <pre id="diagnostics-output">No diagnostics run yet.</pre>
+      </section>
+    </main>
+
+    <script src="../shared/core.js"></script>
+    <script src="../shared/defaults.js"></script>
+    <script src="../shared/debug.js"></script>
+    <script src="../shared/course-nav-utils.js"></script>
+    <script src="../shared/storage.js"></script>
+    <script src="./popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blank Canvas Settings</title>
+    <link rel="stylesheet" href="./options.css">
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Blank Canvas</p>
+          <h1>Minimalist Canvas controls</h1>
+          <p class="lede">
+            Tune what stays visible, preview selector matches, and keep a small debugging surface ready when Canvas updates.
+          </p>
+        </div>
+      </header>
+
+      <form id="settings-form" class="settings-grid">
+        <section class="card">
+          <h2>Core cleanup</h2>
+
+          <label class="setting-row">
+            <span>
+              <strong>Enable Blank Canvas</strong>
+              <small>Master switch for the extension.</small>
+            </span>
+            <input type="checkbox" name="enabled">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Show dashboard to-do list</strong>
+              <small>Adds a minimalist pending-assignment list above your courses.</small>
+            </span>
+            <input type="checkbox" name="showDashboardTodoList">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Hide dashboard sidebar</strong>
+              <small>Removes To Do, Recent Feedback, and the grades block.</small>
+            </span>
+            <input type="checkbox" name="hideRightSidebar">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Hide dashboard search</strong>
+              <small>Removes the search area above the course cards.</small>
+            </span>
+            <input type="checkbox" name="hideDashboardSearch">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Hide course card images</strong>
+              <small>Removes large course card cover art.</small>
+            </span>
+            <input type="checkbox" name="hideCourseCardImages">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Hide course card actions</strong>
+              <small>Removes the icon row at the bottom of each card.</small>
+            </span>
+            <input type="checkbox" name="hideCourseCardActions">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Hide course card metadata</strong>
+              <small>Removes extra subtitle and term text.</small>
+            </span>
+            <input type="checkbox" name="hideCourseCardMeta">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Hide course card menu buttons</strong>
+              <small>Removes the course card kebab buttons.</small>
+            </span>
+            <input type="checkbox" name="hideCourseCardMenu">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Hide secondary nav items</strong>
+              <small>Removes Groups, History, Search, Spark, and Help links.</small>
+            </span>
+            <input type="checkbox" name="hideSecondaryNavItems">
+          </label>
+        </section>
+
+        <section class="card">
+          <h2>Custom cleanup</h2>
+          <label class="stacked-field" for="customHiddenSelectors">
+            <strong>Custom selectors</strong>
+            <small>Enter one CSS selector per line. These elements will be hidden too.</small>
+          </label>
+          <textarea
+            id="customHiddenSelectors"
+            name="customHiddenSelectors"
+            rows="10"
+            placeholder="#right-side .some-widget&#10;.ic-DashboardCard__header-term"
+          ></textarea>
+
+          <div class="debug-note">
+            <p>Right-click-hidden course tabs can be restored here without resetting the rest of your settings.</p>
+            <button type="button" id="reset-hidden-course-tabs" class="secondary">Restore hidden course tabs</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Debugging</h2>
+
+          <label class="setting-row">
+            <span>
+              <strong>Debug mode</strong>
+              <small>Turns on structured logs in the extension context.</small>
+            </span>
+            <input type="checkbox" name="debugMode">
+          </label>
+
+          <label class="setting-row">
+            <span>
+              <strong>Preview mode</strong>
+              <small>Outlines matched elements instead of hiding them.</small>
+            </span>
+            <input type="checkbox" name="previewMode">
+          </label>
+
+          <div class="debug-note">
+            <p>
+              If a selector breaks, turn on preview mode, run diagnostics from the popup, and compare the matched nodes in DevTools before changing the rule.
+            </p>
+          </div>
+        </section>
+      </form>
+
+      <footer class="footer-bar">
+        <p id="save-status">Ready.</p>
+        <div class="footer-actions">
+          <button type="button" id="reset-settings" class="secondary">Reset defaults</button>
+          <button type="button" id="save-settings">Save changes</button>
+        </div>
+      </footer>
+    </main>
+
+    <script src="../shared/core.js"></script>
+    <script src="../shared/defaults.js"></script>
+    <script src="../shared/debug.js"></script>
+    <script src="../shared/course-nav-utils.js"></script>
+    <script src="../shared/storage.js"></script>
+    <script src="./options.js"></script>
+  </body>
+</html>

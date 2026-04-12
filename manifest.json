@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "Blank Canvas",
+  "description": "Declutter Canvas with a configurable minimalist dashboard and built-in diagnostics.",
+  "version": "0.1.0",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "action": {
+    "default_title": "Blank Canvas",
+    "default_popup": "src/popup/popup.html"
+  },
+  "options_page": "src/options/options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*/*",
+        "http://*/*"
+      ],
+      "js": [
+        "src/shared/core.js",
+        "src/shared/defaults.js",
+        "src/shared/course-nav-utils.js",
+        "src/content/bootstrap.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*/*",
+        "http://*/*"
+      ],
+      "js": [
+        "src/shared/core.js",
+        "src/shared/defaults.js",
+        "src/shared/course-nav-utils.js",
+        "src/shared/debug.js",
+        "src/shared/storage.js",
+        "src/content/selectors.js",
+        "src/content/assignment-utils.js",
+        "src/content/assignment-display.js",
+        "src/content/assignment-formatters.js",
+        "src/content/assignment-dom.js",
+        "src/content/assignment-api.js",
+        "src/content/assignment-store-state.js",
+        "src/content/assignments.js",
+        "src/content/rules.js",
+        "src/content/course-nav.js",
+        "src/content/diagnostics.js",
+        "src/content/dashboard-styles.js",
+        "src/content/dashboard-view.js",
+        "src/content/dashboard.js",
+        "src/content/renderer.js",
+        "src/content/main.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
