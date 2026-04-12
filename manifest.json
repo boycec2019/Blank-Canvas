@@ -24,6 +24,7 @@
       "js": [
         "src/shared/core.js",
         "src/shared/defaults.js",
+        "src/shared/ui.js",
         "src/shared/course-nav-utils.js",
         "src/content/bootstrap.js"
       ],
@@ -37,6 +38,7 @@
       "js": [
         "src/shared/core.js",
         "src/shared/defaults.js",
+        "src/shared/ui.js",
         "src/shared/course-nav-utils.js",
         "src/shared/debug.js",
         "src/shared/storage.js",
@@ -54,6 +56,7 @@
         "src/content/dashboard-styles.js",
         "src/content/dashboard-view.js",
         "src/content/dashboard.js",
+        "src/content/theme-styles.js",
         "src/content/renderer.js",
         "src/content/main.js"
       ],

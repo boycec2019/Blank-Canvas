@@ -3,6 +3,15 @@
 
   root.defaults = Object.freeze({
     enabled: true,
+    uiLayoutMode: "editorial",
+    uiPhaseTypographyReset: true,
+    uiPhaseDashboardShell: false,
+    uiPhaseAgendaList: false,
+    uiPhaseAssignmentHierarchy: false,
+    uiPhaseTodayStrip: false,
+    uiPhaseFocusedPages: false,
+    uiPhaseMobilePolish: false,
+    uiPhaseMotionPolish: false,
     showDashboardTodoList: true,
     hideRightSidebar: true,
     hideDashboardSearch: true,
@@ -21,6 +30,42 @@
     enabled: {
       label: "Enable Blank Canvas",
       description: "Master switch for all decluttering behavior."
+    },
+    uiLayoutMode: {
+      label: "UI layout mode",
+      description: "Selects the layout system Blank Canvas should prepare for the current page."
+    },
+    uiPhaseTypographyReset: {
+      label: "Phase 1: Typography and color reset",
+      description: "Keeps the editorial visual reset behind a temporary rollout switch."
+    },
+    uiPhaseDashboardShell: {
+      label: "Phase 2: Dashboard shell and spacing",
+      description: "Keeps page-shell spacing changes behind a temporary rollout switch."
+    },
+    uiPhaseAgendaList: {
+      label: "Phase 4: Agenda list layout",
+      description: "Keeps the assignment reading-list layout behind a temporary rollout switch."
+    },
+    uiPhaseAssignmentHierarchy: {
+      label: "Phase 5: Assignment row hierarchy",
+      description: "Keeps refined assignment row hierarchy behind a temporary rollout switch."
+    },
+    uiPhaseTodayStrip: {
+      label: "Phase 6: Today strip and focus summary",
+      description: "Keeps the top summary surface behind a temporary rollout switch."
+    },
+    uiPhaseFocusedPages: {
+      label: "Phase 7: Focused page variants",
+      description: "Keeps page-specific minimalist variants behind a temporary rollout switch."
+    },
+    uiPhaseMobilePolish: {
+      label: "Phase 8: Mobile and narrow-width polish",
+      description: "Keeps narrow-screen layout refinements behind a temporary rollout switch."
+    },
+    uiPhaseMotionPolish: {
+      label: "Phase 9: Motion and final polish",
+      description: "Keeps optional interaction polish behind a temporary rollout switch."
     },
     showDashboardTodoList: {
       label: "Show dashboard to-do list",

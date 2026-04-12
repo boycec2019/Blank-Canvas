@@ -1,8 +1,8 @@
 :root {
   color-scheme: light;
-  font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  background: #f5f7fb;
-  color: #10203a;
+  font-family: var(--blank-canvas-font-body, "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif);
+  background: var(--blank-canvas-color-bg, #f5f7fb);
+  color: var(--blank-canvas-color-text, #10203a);
 }
 
 body {
@@ -10,7 +10,8 @@ body {
   width: 380px;
   background:
     radial-gradient(circle at top left, rgba(45, 125, 255, 0.12), transparent 38%),
-    linear-gradient(180deg, #fbfcff 0%, #f1f5fb 100%);
+    linear-gradient(180deg, var(--blank-canvas-color-surface-elevated, #fbfcff) 0%, #f1f5fb 100%);
+  color: var(--blank-canvas-color-text, #10203a);
 }
 
 .popup-shell {
@@ -29,6 +30,7 @@ body {
 .popup-header h1 {
   margin: 4px 0 0;
   font-size: 1.45rem;
+  font-family: var(--blank-canvas-font-heading, inherit);
 }
 
 .eyebrow {
@@ -36,15 +38,15 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.7rem;
-  color: #60708a;
+  color: var(--blank-canvas-color-muted, #60708a);
 }
 
 .panel {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(16, 32, 58, 0.08);
-  border-radius: 16px;
+  background: var(--blank-canvas-color-surface-elevated, rgba(255, 255, 255, 0.88));
+  border: 1px solid var(--blank-canvas-border-subtle, rgba(16, 32, 58, 0.08));
+  border-radius: var(--blank-canvas-radius-md, 16px);
   padding: 14px;
-  box-shadow: 0 10px 30px rgba(16, 32, 58, 0.08);
+  box-shadow: var(--blank-canvas-shadow-card-hover, 0 10px 30px rgba(16, 32, 58, 0.08));
 }
 
 .panel-heading {
@@ -57,6 +59,17 @@ body {
 .panel-heading h2 {
   margin: 4px 0 0;
   font-size: 1.12rem;
+  font-family: var(--blank-canvas-font-heading, inherit);
+}
+
+.stacked-field strong,
+.stacked-field small {
+  display: block;
+}
+
+.stacked-field small {
+  margin-top: 3px;
+  color: var(--blank-canvas-color-muted, #5e6b82);
 }
 
 .toggle-row {
@@ -68,7 +81,7 @@ body {
 }
 
 .toggle-row + .toggle-row {
-  border-top: 1px solid rgba(16, 32, 58, 0.08);
+  border-top: 1px solid var(--blank-canvas-border-subtle, rgba(16, 32, 58, 0.08));
 }
 
 .toggle-row strong,
@@ -78,7 +91,7 @@ body {
 
 .toggle-row small {
   margin-top: 3px;
-  color: #5e6b82;
+  color: var(--blank-canvas-color-muted, #5e6b82);
 }
 
 input[type="checkbox"] {
@@ -86,20 +99,31 @@ input[type="checkbox"] {
   height: 18px;
 }
 
+select {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid var(--blank-canvas-border-strong, rgba(16, 32, 58, 0.14));
+  border-radius: var(--blank-canvas-radius-sm, 12px);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--blank-canvas-color-text, #10203a);
+  background: var(--blank-canvas-color-surface, #fbfcff);
+}
+
 button {
   appearance: none;
   border: none;
   border-radius: 999px;
   padding: 10px 14px;
-  background: #153e75;
+  background: var(--blank-canvas-color-accent, #153e75);
   color: #ffffff;
   cursor: pointer;
   font-weight: 600;
 }
 
 button.secondary {
-  background: #e5eaf3;
-  color: #153e75;
+  background: var(--blank-canvas-color-surface-muted, #e5eaf3);
+  color: var(--blank-canvas-color-accent, #153e75);
 }
 
 .quiet-button {
@@ -117,7 +141,7 @@ button.secondary {
 
 #status-text {
   margin: 0 0 8px;
-  color: #54637a;
+  color: var(--blank-canvas-color-muted, #54637a);
 }
 
 .todo-panel {
@@ -126,7 +150,7 @@ button.secondary {
 
 #todo-summary {
   margin: 12px 0 14px;
-  color: #54637a;
+  color: var(--blank-canvas-color-muted, #54637a);
 }
 
 .todo-list {
@@ -138,7 +162,7 @@ button.secondary {
 }
 
 .todo-item + .todo-item {
-  border-top: 1px solid rgba(16, 32, 58, 0.08);
+  border-top: 1px solid var(--blank-canvas-border-subtle, rgba(16, 32, 58, 0.08));
   padding-top: 8px;
 }
 
@@ -156,7 +180,7 @@ button.todo-link {
 
 button.todo-link:hover,
 button.todo-link:focus-visible {
-  color: #153e75;
+  color: var(--blank-canvas-color-accent, #153e75);
 }
 
 .todo-title,
@@ -170,14 +194,21 @@ button.todo-link:focus-visible {
 }
 
 .todo-due {
-  color: #153e75;
+  color: var(--blank-canvas-color-accent, #153e75);
   font-size: 0.82rem;
   margin-top: 2px;
 }
 
 .todo-empty {
-  color: #5e6b82;
+  color: var(--blank-canvas-color-muted, #5e6b82);
   padding: 4px 0 2px;
+}
+
+.helper-text {
+  margin: 10px 0 0;
+  color: var(--blank-canvas-color-muted, #5e6b82);
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 #diagnostics-output {
@@ -186,9 +217,24 @@ button.todo-link:focus-visible {
   min-height: 120px;
   max-height: 220px;
   overflow: auto;
-  border-radius: 12px;
+  border-radius: var(--blank-canvas-radius-sm, 12px);
   background: #0f172a;
   color: #d9e2f1;
   font-size: 0.8rem;
   white-space: pre-wrap;
+}
+
+:root[data-blank-canvas-layout-mode='editorial'][data-ui-phase-typography-reset='true'] body {
+  background:
+    radial-gradient(circle at top left, rgba(47, 93, 80, 0.12), transparent 38%),
+    linear-gradient(180deg, var(--blank-canvas-color-bg) 0%, #f9f4eb 100%);
+}
+
+:root[data-blank-canvas-layout-mode='editorial'][data-ui-phase-typography-reset='true'] .panel {
+  backdrop-filter: blur(8px);
+}
+
+:root[data-blank-canvas-layout-mode='editorial'][data-ui-phase-typography-reset='true'] #diagnostics-output {
+  background: #1d1a17;
+  color: #f0e6d7;
 }

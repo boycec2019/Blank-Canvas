@@ -1,6 +1,6 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
-  const fields = Array.from(document.querySelectorAll("input[name]"));
+  const fields = Array.from(document.querySelectorAll("[name]"));
   const statusText = document.getElementById("status-text");
   const diagnosticsOutput = document.getElementById("diagnostics-output");
   const diagnosticsButton = document.getElementById("run-diagnostics");
@@ -9,16 +9,21 @@
   const refreshTodoButton = document.getElementById("refresh-todo");
   const todoSummary = document.getElementById("todo-summary");
   const todoList = document.getElementById("todo-list");
+  const uiLayoutModeField = document.getElementById("uiLayoutMode");
+  const uiPhaseSummary = document.getElementById("ui-phase-summary");
   let todoTabId = null;
+  let currentSettings = { ...root.defaults };
 
   function setStatus(message) {
     statusText.textContent = message;
   }
 
   function applySettingsToFields(settings) {
-    fields.forEach((field) => {
-      field.checked = Boolean(settings[field.name]);
-    });
+    root.settingsUi.applySettingsToElements(fields, settings);
+  }
+
+  function updateUiPhaseSummary(settings) {
+    uiPhaseSummary.textContent = root.settingsUi.summarizeActivePhases(settings);
   }
 
   async function getActiveTab() {
@@ -44,10 +49,16 @@
   }
 
   async function syncField(field) {
-    const nextValue = field.checked;
+    const nextValue = field.type === "checkbox" ? field.checked : field.value;
     await root.storage.setSettings({
       [field.name]: nextValue
     });
+    currentSettings = root.storage.mergeSettings({
+      ...currentSettings,
+      [field.name]: nextValue
+    });
+    root.settingsUi.applyTheme(currentSettings);
+    updateUiPhaseSummary(currentSettings);
     setStatus("Settings saved.");
   }
 
@@ -147,7 +158,17 @@
       `Canvas-like page: ${report.isCanvasLike}`,
       `Path: ${report.pagePath}`,
       `Preview mode: ${report.previewMode}`,
+      `UI layout mode: ${report.uiLayoutLabel} (${report.uiLayoutMode})`,
+      `Active UI phases: ${report.uiActivePhases.length ? report.uiActivePhases.join(", ") : "none"}`,
       `Managed elements: ${report.managedElements}`,
+      `Mounted surfaces: ${
+        Array.isArray(report.mountedSurfaces)
+          ? report.mountedSurfaces
+              .filter((surface) => surface.mounted)
+              .map((surface) => surface.label)
+              .join(", ") || "none"
+          : "none"
+      }`,
       `Pending assignments: ${report.pendingAssignmentsCount || 0}`,
       `Assignments updated: ${
         report.pendingAssignmentsLastLoadedAt
@@ -160,6 +181,14 @@
       `Dashboard to-do rendered: ${Boolean(report.dashboardTodo && report.dashboardTodo.rendered)}`,
       ""
     ];
+
+    if (Array.isArray(report.mountedSurfaces) && report.mountedSurfaces.length) {
+      lines.push("Mounted surfaces:");
+      report.mountedSurfaces.forEach((surface) => {
+        lines.push(`  ${surface.label}: ${surface.mounted ? "mounted" : "not mounted"}`);
+      });
+      lines.push("");
+    }
 
     if (!report.rules.length) {
       lines.push("No active rules matched this page.");
@@ -207,9 +236,15 @@
   }
 
   async function initialize() {
-    const settings = await root.storage.getSettings();
-    root.debug.setFlags(settings);
-    applySettingsToFields(settings);
+    root.settingsUi.renderLayoutModeOptions(uiLayoutModeField, {
+      includeDescription: false
+    });
+
+    currentSettings = await root.storage.getSettings();
+    root.debug.setFlags(currentSettings);
+    root.settingsUi.applyTheme(currentSettings);
+    applySettingsToFields(currentSettings);
+    updateUiPhaseSummary(currentSettings);
 
     fields.forEach((field) => {
       field.addEventListener("change", () => {
@@ -229,8 +264,10 @@
 
     resetButton.addEventListener("click", async () => {
       await root.storage.resetSettings();
-      const nextSettings = await root.storage.getSettings();
-      applySettingsToFields(nextSettings);
+      currentSettings = await root.storage.getSettings();
+      root.settingsUi.applyTheme(currentSettings);
+      applySettingsToFields(currentSettings);
+      updateUiPhaseSummary(currentSettings);
       diagnosticsOutput.textContent = "Settings reset to defaults.";
       setStatus("Defaults restored.");
     });

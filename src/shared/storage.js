@@ -4,7 +4,7 @@
   const storageAreaName = chrome.storage.sync ? "sync" : "local";
 
   function mergeSettings(storedValues) {
-    return {
+    const mergedSettings = {
       ...root.defaults,
       ...(storedValues || {}),
       hiddenCourseNavItems: root.courseNavUtils.normalizeHiddenCourseNavItems(
@@ -17,6 +17,13 @@
           ? storedValues.customHiddenSelectors
           : root.defaults.customHiddenSelectors
       )
+    };
+
+    mergedSettings.uiLayoutMode = root.ui.normalizeLayoutMode(mergedSettings.uiLayoutMode);
+
+    return {
+      ...mergedSettings,
+      ...root.ui.normalizePhaseFlags(mergedSettings)
     };
   }
 

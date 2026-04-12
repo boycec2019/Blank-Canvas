@@ -5,54 +5,37 @@
   const resetButton = document.getElementById("reset-settings");
   const resetHiddenCourseTabsButton = document.getElementById("reset-hidden-course-tabs");
   const saveStatus = document.getElementById("save-status");
+  const uiLayoutModeField = document.getElementById("uiLayoutMode");
+  const uiPhaseSettings = document.getElementById("ui-phase-settings");
 
   function setStatus(message) {
     saveStatus.textContent = message;
   }
 
   function applySettings(settings) {
-    Array.from(form.elements).forEach((element) => {
-      if (!element.name) {
-        return;
-      }
-
-      if (element.type === "checkbox") {
-        element.checked = Boolean(settings[element.name]);
-        return;
-      }
-
-      element.value = settings[element.name] || "";
-    });
+    root.settingsUi.applySettingsToElements(Array.from(form.elements), settings);
   }
 
   function collectSettingsFromForm() {
-    const nextSettings = {};
-
-    Array.from(form.elements).forEach((element) => {
-      if (!element.name) {
-        return;
-      }
-
-      if (element.type === "checkbox") {
-        nextSettings[element.name] = element.checked;
-        return;
-      }
-
-      nextSettings[element.name] = element.value;
-    });
-
-    return nextSettings;
+    return root.settingsUi.collectSettingsFromElements(Array.from(form.elements));
   }
 
   async function saveSettings() {
     const nextSettings = collectSettingsFromForm();
     await root.storage.setSettings(nextSettings);
+    root.settingsUi.applyTheme(root.storage.mergeSettings(nextSettings));
     setStatus("Changes saved.");
   }
 
   async function initialize() {
+    root.settingsUi.renderLayoutModeOptions(uiLayoutModeField, {
+      includeDescription: true
+    });
+    root.settingsUi.renderPhaseControls(uiPhaseSettings);
+
     const settings = await root.storage.getSettings();
     root.debug.setFlags(settings);
+    root.settingsUi.applyTheme(settings);
     applySettings(settings);
 
     saveButton.addEventListener("click", () => {
@@ -64,6 +47,7 @@
     resetButton.addEventListener("click", async () => {
       await root.storage.resetSettings();
       const nextSettings = await root.storage.getSettings();
+      root.settingsUi.applyTheme(nextSettings);
       applySettings(nextSettings);
       setStatus("Defaults restored.");
     });

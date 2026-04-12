@@ -1,8 +1,30 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
 
+  function getMountedSurfaces() {
+    const surfaces = [
+      {
+        id: "managed-style",
+        label: "Managed stylesheet",
+        mounted: Boolean(root.renderer && document.getElementById(root.renderer.STYLE_ID))
+      },
+      {
+        id: "dashboard-assignments-widget",
+        label: "Dashboard assignments widget",
+        mounted: Boolean(
+          root.dashboardStyles && document.getElementById(root.dashboardStyles.WIDGET_ID)
+        )
+      }
+    ];
+
+    return surfaces;
+  }
+
   function buildReport(settings) {
     const context = root.canvas.getPageContext();
+    const uiLayoutMode = root.ui.getLayoutMode(settings);
+    const uiPhaseStates = root.ui.getPhaseStates(settings);
+    const mountedSurfaces = getMountedSurfaces();
     const pendingAssignments = context.isDashboard && root.assignments
       ? root.assignments.getSnapshot()
       : {
@@ -41,6 +63,11 @@
       pagePath: context.path,
       isCanvasLike: root.canvas.isCanvasLikePage(),
       previewMode: Boolean(settings.previewMode),
+      uiLayoutMode,
+      uiLayoutLabel: root.ui.getLayoutModeMeta(uiLayoutMode).label,
+      uiActivePhases: uiPhaseStates.filter((phase) => phase.enabled).map((phase) => phase.id),
+      uiPhaseStates,
+      mountedSurfaces,
       managedElements: document.querySelectorAll("[data-blank-canvas-managed='true']").length,
       pendingAssignmentsError: pendingAssignments.error || null,
       pendingAssignmentsCount: pendingAssignments.items.length,

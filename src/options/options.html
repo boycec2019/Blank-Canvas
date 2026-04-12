@@ -20,6 +20,22 @@
 
       <form id="settings-form" class="settings-grid">
         <section class="card">
+          <h2>UI rollout</h2>
+
+          <label class="stacked-field" for="uiLayoutMode">
+            <strong>Layout mode</strong>
+            <small>Select which UI system Blank Canvas should prepare on Canvas pages.</small>
+          </label>
+          <select id="uiLayoutMode" name="uiLayoutMode"></select>
+
+          <div class="debug-note phase-note">
+            <p>The redesign phases stay behind temporary switches so we can ship, compare, and debug each change independently.</p>
+          </div>
+
+          <div id="ui-phase-settings" class="phase-settings"></div>
+        </section>
+
+        <section class="card">
           <h2>Core cleanup</h2>
 
           <label class="setting-row">
@@ -152,9 +168,11 @@
 
     <script src="../shared/core.js"></script>
     <script src="../shared/defaults.js"></script>
+    <script src="../shared/ui.js"></script>
     <script src="../shared/debug.js"></script>
     <script src="../shared/course-nav-utils.js"></script>
     <script src="../shared/storage.js"></script>
+    <script src="../shared/settings-ui.js"></script>
     <script src="./options.js"></script>
   </body>
 </html>
