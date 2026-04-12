@@ -1,0 +1,5 @@
+Thumbs.db
+.DS_Store
+
+# Local test artifacts
+tests/tmp*/
