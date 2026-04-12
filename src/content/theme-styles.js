@@ -4,6 +4,8 @@
   const LAYOUT_CLASS_PREFIX = "blank-canvas--layout-";
   const EDITORIAL_PHASE_SELECTOR =
     "html.blank-canvas--layout-editorial.blank-canvas--phase-typography-reset";
+  const DASHBOARD_SHELL_PHASE_SELECTOR =
+    "html.blank-canvas--layout-editorial.blank-canvas--phase-dashboard-shell";
 
   function editorialTypographyResetCss() {
     return `
@@ -153,6 +155,141 @@
     `;
   }
 
+  function editorialDashboardShellCss() {
+    return `
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #application,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-app-main-content,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard_container {
+        background: transparent !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-DashboardLayout {
+        display: block !important;
+        max-width: none !important;
+        padding: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-DashboardLayout__Main,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard {
+        width: min(980px, calc(100vw - 176px)) !important;
+        max-width: 980px !important;
+        margin: 0 auto !important;
+        padding: 52px 44px 80px !important;
+        box-sizing: border-box !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--hide-right-sidebar .ic-DashboardLayout__Main,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--hide-right-sidebar #dashboard {
+        width: min(980px, calc(100vw - 176px)) !important;
+        max-width: 980px !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard {
+        display: grid !important;
+        gap: 44px !important;
+        align-content: start !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard > header,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard > div:first-child {
+        margin: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 20px !important;
+        padding: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout h1,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header h1,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard h1 {
+        margin: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout > div:first-child,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header > div:first-child {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout > div:last-child,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header > div:last-child,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout > form,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header > form {
+        flex: 0 0 auto !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container {
+        margin: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container > div,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container .ic-DashboardCard__box,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container .ic-DashboardCard__box__container {
+        margin-top: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container .ic-DashboardCard {
+        min-height: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container > div {
+        display: grid !important;
+        gap: 22px !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header {
+        padding: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout form,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header form {
+        margin: 0 !important;
+      }
+
+      @media (max-width: 1100px) {
+        ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-DashboardLayout__Main,
+        ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard,
+        ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--hide-right-sidebar .ic-DashboardLayout__Main,
+        ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--hide-right-sidebar #dashboard {
+          width: calc(100vw - 132px) !important;
+          padding: 40px 30px 68px !important;
+        }
+      }
+
+      @media (max-width: 720px) {
+        ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-DashboardLayout__Main,
+        ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard,
+        ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--hide-right-sidebar .ic-DashboardLayout__Main,
+        ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--hide-right-sidebar #dashboard {
+          width: calc(100vw - 88px) !important;
+          padding: 28px 20px 52px !important;
+          gap: 32px !important;
+        }
+
+        ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header,
+        ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout {
+          align-items: flex-start !important;
+          flex-direction: column !important;
+        }
+
+        ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header__layout form,
+        ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-Dashboard-header form {
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+      }
+    `;
+  }
+
   function buildBaseCss(settings) {
     return `
       :root {
@@ -203,6 +340,10 @@ ${root.ui.buildTokenCss(settings)}
 
       ${root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_TYPOGRAPHY_RESET)
         ? editorialTypographyResetCss()
+        : ""}
+
+      ${root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_DASHBOARD_SHELL)
+        ? editorialDashboardShellCss()
         : ""}
 
       ${root.dashboard ? root.dashboard.getStyles() : ""}

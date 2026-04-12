@@ -2,6 +2,7 @@
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
   const DEFAULT_LAYOUT_MODE = "classic";
   const PHASE_TYPOGRAPHY_RESET = "uiPhaseTypographyReset";
+  const PHASE_DASHBOARD_SHELL = "uiPhaseDashboardShell";
 
   const layoutModes = Object.freeze({
     classic: Object.freeze({
@@ -206,6 +207,7 @@
   root.ui = {
     DEFAULT_LAYOUT_MODE,
     PHASE_TYPOGRAPHY_RESET,
+    PHASE_DASHBOARD_SHELL,
     layoutModes,
     phaseDefinitions,
     normalizeLayoutMode,

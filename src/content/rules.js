@@ -1,7 +1,24 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
+  const isDashboardShellActive = (context, settings) =>
+    context.isDashboard &&
+    root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_DASHBOARD_SHELL);
 
   const cssRules = [
+    {
+      id: "hideDashboardHeaderSearchWidget",
+      label: "Hide dashboard header search widget",
+      settingKey: "uiPhaseDashboardShell",
+      when: isDashboardShellActive,
+      getSelectors: () => root.dashboardHeader.getSearchWidgetSelectors()
+    },
+    {
+      id: "hideDashboardHeaderOptionsButton",
+      label: "Hide dashboard header options button",
+      settingKey: "uiPhaseDashboardShell",
+      when: isDashboardShellActive,
+      getSelectors: () => root.dashboardHeader.getOptionsButtonSelectors()
+    },
     {
       id: "hideRightSidebar",
       label: "Hide dashboard sidebar",

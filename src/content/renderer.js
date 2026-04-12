@@ -56,13 +56,15 @@
   }
 
   function markTargets(ruleId, elements, settings) {
-    elements.forEach((element) => {
+    const safeElements = elements.filter((element) => !root.dashboardHeader.isProtectedElement(element));
+
+    safeElements.forEach((element) => {
       element.setAttribute("data-blank-canvas-managed", "true");
       element.setAttribute("data-blank-canvas-rule", ruleId);
       element.classList.add(settings.previewMode ? "blank-canvas--preview-match" : "blank-canvas--managed-hide");
     });
 
-    return elements.length;
+    return safeElements.length;
   }
 
   function applyDomRules(settings) {

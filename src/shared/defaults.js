@@ -5,7 +5,7 @@
     enabled: true,
     uiLayoutMode: "editorial",
     uiPhaseTypographyReset: true,
-    uiPhaseDashboardShell: false,
+    uiPhaseDashboardShell: true,
     uiPhaseAgendaList: false,
     uiPhaseAssignmentHierarchy: false,
     uiPhaseTodayStrip: false,

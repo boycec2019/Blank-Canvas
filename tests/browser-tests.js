@@ -303,6 +303,38 @@
     equal(next["101"].length, 2, "Appending an existing hidden tab should not duplicate it.");
   });
 
+  addTest("Dashboard header helpers match chrome and protect the title", () => {
+    const fixture = createFixture(`
+      <div id="dashboard">
+        <div class="ic-Dashboard-header">
+          <div class="ic-Dashboard-header__layout">
+            <div><h1>Dashboard</h1></div>
+            <atomic-search-desktop-widget></atomic-search-desktop-widget>
+            <button data-testid="dashboard-options-button" type="button">More</button>
+          </div>
+        </div>
+      </div>
+    `);
+
+    const snapshot = root.dashboardHeader.getDebugSnapshot(fixture);
+    const heading = fixture.querySelector("h1");
+    const searchWidget = fixture.querySelector("atomic-search-desktop-widget");
+    const optionsButton = fixture.querySelector("button[data-testid='dashboard-options-button']");
+
+    equal(snapshot.heading.matchedCount, 1, "The dashboard heading should be discoverable for protection.");
+    equal(snapshot.searchWidget.matchedCount, 1, "The dashboard search widget should be matched exactly.");
+    equal(snapshot.optionsButton.matchedCount, 1, "The dashboard options button should be matched exactly.");
+    assert(root.dashboardHeader.isProtectedElement(heading), "The dashboard heading should be protected.");
+    assert(
+      !root.dashboardHeader.isProtectedElement(searchWidget),
+      "The dashboard search widget should remain hideable."
+    );
+    assert(
+      !root.dashboardHeader.isProtectedElement(optionsButton),
+      "The dashboard options button should remain hideable."
+    );
+  });
+
   addTest("Assignment store prefers API data after refresh", async () => {
     const originalDom = root.assignmentDom.scrapePendingAssignmentsFromDom;
     const originalApi = root.assignmentApi.fetchPendingAssignmentsFromApi;

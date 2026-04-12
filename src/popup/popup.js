@@ -182,6 +182,21 @@
       ""
     ];
 
+    if (report.dashboardHeader) {
+      lines.push("Dashboard header:");
+      lines.push(`  Heading text: ${report.dashboardHeader.protectedHeadingText || "none"}`);
+      lines.push(
+        `  Heading matches: ${report.dashboardHeader.heading.matchedCount} (${report.dashboardHeader.heading.visibleCount} visible)`
+      );
+      lines.push(
+        `  Search widget matches: ${report.dashboardHeader.searchWidget.matchedCount} (${report.dashboardHeader.searchWidget.visibleCount} visible)`
+      );
+      lines.push(
+        `  Options button matches: ${report.dashboardHeader.optionsButton.matchedCount} (${report.dashboardHeader.optionsButton.visibleCount} visible)`
+      );
+      lines.push("");
+    }
+
     if (Array.isArray(report.mountedSurfaces) && report.mountedSurfaces.length) {
       lines.push("Mounted surfaces:");
       report.mountedSurfaces.forEach((surface) => {

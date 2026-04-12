@@ -43,6 +43,7 @@
         "src/shared/debug.js",
         "src/shared/storage.js",
         "src/content/selectors.js",
+        "src/content/dashboard-header.js",
         "src/content/assignment-utils.js",
         "src/content/assignment-display.js",
         "src/content/assignment-formatters.js",

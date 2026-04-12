@@ -9,6 +9,14 @@
         mounted: Boolean(root.renderer && document.getElementById(root.renderer.STYLE_ID))
       },
       {
+        id: "dashboard-shell",
+        label: "Dashboard shell layout",
+        mounted: Boolean(
+          document.documentElement.classList.contains("blank-canvas--phase-dashboard-shell") &&
+          document.querySelector(".ic-DashboardLayout__Main, #dashboard")
+        )
+      },
+      {
         id: "dashboard-assignments-widget",
         label: "Dashboard assignments widget",
         mounted: Boolean(
@@ -25,6 +33,9 @@
     const uiLayoutMode = root.ui.getLayoutMode(settings);
     const uiPhaseStates = root.ui.getPhaseStates(settings);
     const mountedSurfaces = getMountedSurfaces();
+    const dashboardHeader = root.dashboardHeader
+      ? root.dashboardHeader.getDebugSnapshot()
+      : null;
     const pendingAssignments = context.isDashboard && root.assignments
       ? root.assignments.getSnapshot()
       : {
@@ -68,6 +79,7 @@
       uiActivePhases: uiPhaseStates.filter((phase) => phase.enabled).map((phase) => phase.id),
       uiPhaseStates,
       mountedSurfaces,
+      dashboardHeader,
       managedElements: document.querySelectorAll("[data-blank-canvas-managed='true']").length,
       pendingAssignmentsError: pendingAssignments.error || null,
       pendingAssignmentsCount: pendingAssignments.items.length,
