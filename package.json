@@ -1,0 +1,14 @@
+{
+  "name": "blank-canvas",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test:fixtures": "python tests/run_browser_tests.py",
+    "test:real": "playwright test -c tests/real-canvas/playwright.config.mjs",
+    "test:real:update": "playwright test -c tests/real-canvas/playwright.config.mjs --update-snapshots"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.0"
+  }
+}

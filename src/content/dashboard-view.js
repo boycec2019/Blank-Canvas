@@ -33,6 +33,7 @@
     const widget = document.createElement("section");
     widget.id = root.dashboardStyles.WIDGET_ID;
     widget.setAttribute("aria-label", "Assignments");
+    widget.dataset.layoutVariant = "classic";
 
     const header = createElement("header", "blank-canvas__todo-header");
     const heading = createElement("h2", "", "Assignments");
@@ -43,6 +44,15 @@
     widget.append(header, content);
 
     return widget;
+  }
+
+  function syncPresentationState(widget, settings) {
+    const variant = root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_AGENDA_LIST)
+      ? "agenda"
+      : "classic";
+
+    widget.dataset.layoutVariant = variant;
+    return variant;
   }
 
   function ensureWidgetPlacement(widget, mount) {
@@ -131,7 +141,8 @@
 
     return {
       rendered: Boolean(widget),
-      itemCount: widget ? Number(widget.dataset.itemCount || 0) : 0
+      itemCount: widget ? Number(widget.dataset.itemCount || 0) : 0,
+      layoutVariant: widget ? widget.dataset.layoutVariant || "classic" : "none"
     };
   }
 
@@ -148,6 +159,7 @@
     formatAssignmentCount,
     getSnapshot,
     renderItems,
+    syncPresentationState,
     teardown
   };
 })();

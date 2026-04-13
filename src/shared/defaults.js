@@ -6,7 +6,8 @@
     uiLayoutMode: "editorial",
     uiPhaseTypographyReset: true,
     uiPhaseDashboardShell: true,
-    uiPhaseAgendaList: false,
+    uiPhaseLeftRailSimplification: true,
+    uiPhaseAgendaList: true,
     uiPhaseAssignmentHierarchy: false,
     uiPhaseTodayStrip: false,
     uiPhaseFocusedPages: false,
@@ -42,6 +43,10 @@
     uiPhaseDashboardShell: {
       label: "Phase 2: Dashboard shell and spacing",
       description: "Keeps page-shell spacing changes behind a temporary rollout switch."
+    },
+    uiPhaseLeftRailSimplification: {
+      label: "Phase 3: Left rail simplification",
+      description: "Keeps the softened global navigation rail behind a temporary rollout switch."
     },
     uiPhaseAgendaList: {
       label: "Phase 4: Agenda list layout",

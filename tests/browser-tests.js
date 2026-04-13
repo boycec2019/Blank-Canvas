@@ -29,6 +29,59 @@
     return fixture;
   }
 
+  function resetDocumentUiState() {
+    root.themeStyles.clearRootUiState();
+    document.documentElement.classList.remove(
+      "blank-canvas--enabled",
+      "blank-canvas--dashboard",
+      "blank-canvas--hide-right-sidebar",
+      "blank-canvas--quiet-cards"
+    );
+  }
+
+  function mountStyledFixture(settings, html) {
+    const nextSettings = {
+      ...root.defaults,
+      enabled: true,
+      ...settings
+    };
+    const fixture = createFixture(html);
+    const style = document.createElement("style");
+    style.textContent = root.themeStyles.buildBaseCss(nextSettings);
+
+    resetDocumentUiState();
+    root.themeStyles.setRootClasses(nextSettings);
+    document.head.appendChild(style);
+    document.body.appendChild(fixture);
+
+    return {
+      fixture,
+      cleanup() {
+        fixture.remove();
+        style.remove();
+        resetDocumentUiState();
+      }
+    };
+  }
+
+  function normalizeColor(value) {
+    return String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  function isTransparentColor(value) {
+    const normalized = normalizeColor(value);
+    return (
+      normalized === "transparent" ||
+      normalized === "rgba(0, 0, 0, 0)" ||
+      normalized === "rgba(0,0,0,0)"
+    );
+  }
+
+  function hasOverlayBackground(style) {
+    const image = String(style.backgroundImage || "");
+    return image !== "none" && image.includes("gradient");
+  }
+
   function renderResults(results) {
     const passed = results.filter((result) => result.ok).length;
     const failed = results.length - passed;
@@ -333,6 +386,309 @@
       !root.dashboardHeader.isProtectedElement(optionsButton),
       "The dashboard options button should remain hideable."
     );
+  });
+
+  addTest("Dashboard widget switches to agenda layout when Phase 4 is active", () => {
+    const widget = root.dashboardView.createWidget();
+    document.body.appendChild(widget);
+
+    const variant = root.dashboardView.syncPresentationState(widget, {
+      uiLayoutMode: "editorial",
+      uiPhaseAgendaList: true
+    });
+
+    equal(variant, "agenda", "Phase 4 should switch the dashboard widget into agenda mode.");
+    equal(widget.dataset.layoutVariant, "agenda", "The widget should expose its current layout variant.");
+
+    widget.remove();
+  });
+
+  addTest("Phase 3 injects left-rail styling when enabled", () => {
+    const cssText = root.themeStyles.buildBaseCss({
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true,
+      uiPhaseDashboardShell: true,
+      uiPhaseLeftRailSimplification: true,
+      uiPhaseAgendaList: false
+    });
+
+    assert(
+      cssText.includes("blank-canvas--phase-left-rail-simplification"),
+      "Phase 3 CSS should be included when the left-rail phase is active."
+    );
+    assert(
+      cssText.includes(".ic-app-header__menu-list-item--active"),
+      "Left-rail CSS should target the active global navigation state."
+    );
+  });
+
+  addTest("Left rail fixture hides clipped nav labels and keeps a uniform base surface", () => {
+    const mounted = mountStyledFixture(
+      {
+        uiLayoutMode: "editorial",
+        uiPhaseTypographyReset: true,
+        uiPhaseLeftRailSimplification: true
+      },
+      `
+        <nav id="menu">
+          <a id="global_nav_dashboard_link" href="/">
+            <div class="menu-item-icon-container ic-app-header__menu-list-item--active">
+              <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+              <div class="menu-item__text">Dashboard</div>
+            </div>
+          </a>
+          <a id="global_nav_courses_link" href="/courses">
+            <div class="menu-item-icon-container">
+              <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+              <div class="menu-item__text">Courses</div>
+            </div>
+          </a>
+        </nav>
+      `
+    );
+
+    try {
+      const rail = mounted.fixture.querySelector("#menu");
+      const inactiveContainer = mounted.fixture.querySelector("#global_nav_courses_link .menu-item-icon-container");
+      const label = mounted.fixture.querySelector("#global_nav_courses_link .menu-item__text");
+
+      equal(
+        normalizeColor(window.getComputedStyle(inactiveContainer).backgroundColor),
+        normalizeColor(window.getComputedStyle(rail).backgroundColor),
+        "Inactive rail buttons should sit on the same base surface as the sidebar."
+      );
+      equal(window.getComputedStyle(label).display, "none", "Collapsed rail labels should be hidden.");
+    } finally {
+      mounted.cleanup();
+    }
+  });
+
+  addTest("Active left rail overlay applies to list-item active state without changing icon hue", () => {
+    const mounted = mountStyledFixture(
+      {
+        uiLayoutMode: "editorial",
+        uiPhaseTypographyReset: true,
+        uiPhaseLeftRailSimplification: true
+      },
+      `
+        <nav id="menu">
+          <ul class="ic-app-header__menu-list">
+            <li class="ic-app-header__menu-list-item ic-app-header__menu-list-item--active">
+              <a id="global_nav_courses_link" href="/courses">
+                <div class="menu-item-icon-container">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+                  <div class="menu-item__text">Courses</div>
+                </div>
+              </a>
+            </li>
+            <li class="ic-app-header__menu-list-item">
+              <a id="global_nav_calendar_link" href="/calendar">
+                <div class="menu-item-icon-container">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+                  <div class="menu-item__text">Calendar</div>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      `
+    );
+
+    try {
+      const activeContainer = mounted.fixture.querySelector("#global_nav_courses_link .menu-item-icon-container");
+      const activeStyle = window.getComputedStyle(activeContainer);
+      const activeSvg = mounted.fixture.querySelector("#global_nav_courses_link svg");
+      const inactiveSvg = mounted.fixture.querySelector("#global_nav_calendar_link svg");
+
+      assert(
+        hasOverlayBackground(activeStyle),
+        "Active rail items should render a visible selected overlay on the icon container."
+      );
+      equal(
+        normalizeColor(window.getComputedStyle(activeSvg).fill),
+        normalizeColor(window.getComputedStyle(inactiveSvg).fill),
+        "Active rail icons should keep the same ink color as inactive icons."
+      );
+    } finally {
+      mounted.cleanup();
+    }
+  });
+
+  addTest("Active left rail overlay applies to aria-current nav state", () => {
+    const mounted = mountStyledFixture(
+      {
+        uiLayoutMode: "editorial",
+        uiPhaseTypographyReset: true,
+        uiPhaseLeftRailSimplification: true
+      },
+      `
+        <nav id="menu">
+          <a id="global_nav_calendar_link" href="/calendar" aria-current="page">
+            <div class="menu-item-icon-container">
+              <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+              <div class="menu-item__text">Calendar</div>
+            </div>
+          </a>
+        </nav>
+      `
+    );
+
+    try {
+      const activeContainer = mounted.fixture.querySelector("#global_nav_calendar_link .menu-item-icon-container");
+      const activeStyle = window.getComputedStyle(activeContainer);
+
+      assert(
+        hasOverlayBackground(activeStyle),
+        "aria-current rail items should receive the selected overlay."
+      );
+    } finally {
+      mounted.cleanup();
+    }
+  });
+
+  addTest("Active left rail overlay applies to button-based global nav state", () => {
+    const mounted = mountStyledFixture(
+      {
+        uiLayoutMode: "editorial",
+        uiPhaseTypographyReset: true,
+        uiPhaseLeftRailSimplification: true
+      },
+      `
+        <nav id="menu">
+          <ul class="ic-app-header__menu-list">
+            <li class="ic-app-header__menu-list-item ic-app-header__menu-list-item--active">
+              <button type="button">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+              </button>
+            </li>
+            <li class="ic-app-header__menu-list-item">
+              <button type="button">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      `
+    );
+
+    try {
+      const activeButton = mounted.fixture.querySelector(".ic-app-header__menu-list-item--active > button");
+      const inactiveButton = mounted.fixture.querySelector(".ic-app-header__menu-list-item:not(.ic-app-header__menu-list-item--active) > button");
+      const activeStyle = window.getComputedStyle(activeButton);
+      const activeSvg = activeButton.querySelector("svg");
+      const inactiveSvg = inactiveButton.querySelector("svg");
+
+      assert(
+        hasOverlayBackground(activeStyle),
+        "Button-based active rail items should receive the shared selected overlay."
+      );
+      equal(
+        activeStyle.borderLeftWidth,
+        "2px",
+        "Button-based active rail items should receive the shared left marker."
+      );
+      equal(
+        normalizeColor(window.getComputedStyle(activeSvg).fill),
+        normalizeColor(window.getComputedStyle(inactiveSvg).fill),
+        "Button-based active rail icons should keep the same ink color as inactive icons."
+      );
+    } finally {
+      mounted.cleanup();
+    }
+  });
+
+  addTest("Route-based selected overlay applies to global nav ids without Canvas active classes", () => {
+    const mounted = mountStyledFixture(
+      {
+        uiLayoutMode: "editorial",
+        uiPhaseTypographyReset: true,
+        uiPhaseLeftRailSimplification: true
+      },
+      `
+        <nav id="menu">
+          <ul class="ic-app-header__menu-list">
+            <li class="ic-app-header__menu-list-item">
+              <button id="global_nav_courses_link" type="button">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+              </button>
+            </li>
+            <li class="ic-app-header__menu-list-item">
+              <a id="global_nav_calendar_link" href="/calendar">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      `
+    );
+
+    try {
+      document.documentElement.classList.add("blank-canvas--nav-courses");
+
+      const selectedItem = mounted.fixture.querySelector("#global_nav_courses_link").closest("li");
+      const selectedSurface = mounted.fixture.querySelector("#global_nav_courses_link");
+      const unselected = mounted.fixture.querySelector("#global_nav_calendar_link").closest("li");
+      const selectedItemStyle = window.getComputedStyle(selectedItem);
+      const selectedSurfaceStyle = window.getComputedStyle(selectedSurface);
+
+      assert(
+        hasOverlayBackground(selectedSurfaceStyle),
+        "Route-selected global nav ids should receive the selected overlay even without Canvas active classes."
+      );
+      equal(
+        selectedItemStyle.borderLeftWidth,
+        "2px",
+        "Route-selected global nav ids should receive the left marker."
+      );
+      equal(
+        window.getComputedStyle(unselected).borderLeftWidth,
+        "0px",
+        "Unselected route ids should not inherit the selected marker."
+      );
+    } finally {
+      document.documentElement.classList.remove("blank-canvas--nav-courses");
+      mounted.cleanup();
+    }
+  });
+
+  addTest("Dashboard rail tile keeps only one outer marker cue", () => {
+    const mounted = mountStyledFixture(
+      {
+        uiLayoutMode: "editorial",
+        uiPhaseTypographyReset: true,
+        uiPhaseLeftRailSimplification: true
+      },
+      `
+        <nav id="menu">
+          <div class="menu-item-container ic-app-header__menu-list-item--active">
+            <a id="global_nav_dashboard_link" href="/">
+              <div class="menu-item-icon-container">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
+                <div class="menu-item__text">Dashboard</div>
+              </div>
+            </a>
+          </div>
+        </nav>
+      `
+    );
+
+    try {
+      const outerContainer = mounted.fixture.querySelector(".menu-item-container");
+      const innerContainer = mounted.fixture.querySelector("#global_nav_dashboard_link .menu-item-icon-container");
+
+      equal(
+        window.getComputedStyle(outerContainer).borderLeftWidth,
+        "2px",
+        "The outer active rail container should keep the single selection border."
+      );
+      equal(
+        window.getComputedStyle(innerContainer).borderLeftWidth,
+        "0px",
+        "The inner Dashboard icon tile should not draw a second selection border."
+      );
+    } finally {
+      mounted.cleanup();
+    }
   });
 
   addTest("Assignment store prefers API data after refresh", async () => {

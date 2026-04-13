@@ -3,6 +3,8 @@
   const DEFAULT_LAYOUT_MODE = "classic";
   const PHASE_TYPOGRAPHY_RESET = "uiPhaseTypographyReset";
   const PHASE_DASHBOARD_SHELL = "uiPhaseDashboardShell";
+  const PHASE_LEFT_RAIL_SIMPLIFICATION = "uiPhaseLeftRailSimplification";
+  const PHASE_AGENDA_LIST = "uiPhaseAgendaList";
 
   const layoutModes = Object.freeze({
     classic: Object.freeze({
@@ -31,7 +33,13 @@
       description: "Enables the larger page rhythm and dashboard shell cleanup."
     }),
     Object.freeze({
-      id: "uiPhaseAgendaList",
+      id: PHASE_LEFT_RAIL_SIMPLIFICATION,
+      className: "blank-canvas--phase-left-rail-simplification",
+      label: "Phase 3: Left rail simplification",
+      description: "Softens the global navigation rail without changing Canvas navigation behavior."
+    }),
+    Object.freeze({
+      id: PHASE_AGENDA_LIST,
       className: "blank-canvas--phase-agenda-list",
       label: "Phase 4: Agenda list layout",
       description: "Switches the dashboard assignments widget toward a reading-list layout."
@@ -208,6 +216,8 @@
     DEFAULT_LAYOUT_MODE,
     PHASE_TYPOGRAPHY_RESET,
     PHASE_DASHBOARD_SHELL,
+    PHASE_LEFT_RAIL_SIMPLIFICATION,
+    PHASE_AGENDA_LIST,
     layoutModes,
     phaseDefinitions,
     normalizeLayoutMode,

@@ -13,14 +13,15 @@
   }
 
   function getPageContext() {
-    const normalizedPath = window.location.pathname.replace(/\/+$/, "") || "/";
+    const normalizedPath = root.globalNav.normalizePath();
     const courseId = root.courseNavUtils.getCourseIdFromPath(normalizedPath);
 
     return {
       path: normalizedPath,
       isDashboard: normalizedPath === "/" || normalizedPath === "/dashboard",
       isCourse: Boolean(courseId),
-      courseId
+      courseId,
+      globalNavKey: root.globalNav.getGlobalNavKeyFromPath(normalizedPath)
     };
   }
 

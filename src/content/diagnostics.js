@@ -17,10 +17,26 @@
         )
       },
       {
+        id: "left-rail-simplification",
+        label: "Left rail simplification",
+        mounted: Boolean(
+          document.documentElement.classList.contains("blank-canvas--phase-left-rail-simplification") &&
+          document.querySelector("#menu, .ic-app-header")
+        )
+      },
+      {
         id: "dashboard-assignments-widget",
         label: "Dashboard assignments widget",
         mounted: Boolean(
           root.dashboardStyles && document.getElementById(root.dashboardStyles.WIDGET_ID)
+        )
+      },
+      {
+        id: "dashboard-agenda-list",
+        label: "Dashboard agenda list",
+        mounted: Boolean(
+          document.documentElement.classList.contains("blank-canvas--phase-agenda-list") &&
+          document.querySelector(`#${root.dashboardStyles ? root.dashboardStyles.WIDGET_ID : "blank-canvas-dashboard-todo"}[data-layout-variant='agenda']`)
         )
       }
     ];
@@ -72,6 +88,7 @@
     return {
       url: window.location.href,
       pagePath: context.path,
+      globalNavKey: context.globalNavKey,
       isCanvasLike: root.canvas.isCanvasLikePage(),
       previewMode: Boolean(settings.previewMode),
       uiLayoutMode,

@@ -42,6 +42,7 @@
         "src/shared/course-nav-utils.js",
         "src/shared/debug.js",
         "src/shared/storage.js",
+        "src/content/global-nav.js",
         "src/content/selectors.js",
         "src/content/dashboard-header.js",
         "src/content/assignment-utils.js",

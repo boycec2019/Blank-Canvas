@@ -3,3 +3,8 @@ Thumbs.db
 
 # Local test artifacts
 tests/tmp*/
+tests/real-canvas/.auth/
+tests/real-canvas/.pw-user-data/
+tests/real-canvas/snapshots/
+playwright-report/
+test-results/

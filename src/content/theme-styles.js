@@ -6,6 +6,8 @@
     "html.blank-canvas--layout-editorial.blank-canvas--phase-typography-reset";
   const DASHBOARD_SHELL_PHASE_SELECTOR =
     "html.blank-canvas--layout-editorial.blank-canvas--phase-dashboard-shell";
+  const LEFT_RAIL_PHASE_SELECTOR =
+    "html.blank-canvas--layout-editorial.blank-canvas--phase-left-rail-simplification";
 
   function editorialTypographyResetCss() {
     return `
@@ -290,6 +292,301 @@
     `;
   }
 
+  function editorialLeftRailCss() {
+    const railSurface = "rgba(58, 76, 85, 0.98)";
+    const railSelectedSurface = "rgba(255, 248, 240, 0.028)";
+    const railInk = "rgba(247, 240, 230, 0.88)";
+    const routeSelectedNavSelectors = root.globalNav.ROUTE_KEYS
+      .filter((routeKey) => routeKey !== "dashboard")
+      .map((routeKey) => {
+        const routeClassName = root.globalNav.getRouteClassName(routeKey);
+        const listItemSelector = root.globalNav.getRouteSelectedListItemSelector(routeKey);
+        return routeClassName && listItemSelector
+          ? `${LEFT_RAIL_PHASE_SELECTOR}.${routeClassName} ${listItemSelector}`
+          : "";
+      })
+      .filter(Boolean)
+      .join(",\n");
+    const routeSelectedSurfaceSelectors = root.globalNav.ROUTE_KEYS
+      .filter((routeKey) => routeKey !== "dashboard")
+      .flatMap((routeKey) => {
+        const routeClassName = root.globalNav.getRouteClassName(routeKey);
+        return root.globalNav.getRouteSelectedSurfaceSelectors(routeKey).map((selector) =>
+          `${LEFT_RAIL_PHASE_SELECTOR}.${routeClassName} ${selector}`
+        );
+      })
+      .filter(Boolean)
+      .join(",\n");
+    const routeSelectedInkSelectors = root.globalNav.ROUTE_KEYS
+      .filter((routeKey) => routeKey !== "dashboard")
+      .flatMap((routeKey) => {
+        const routeClassName = root.globalNav.getRouteClassName(routeKey);
+        const linkSelector = root.globalNav.getGlobalNavLinkSelector(routeKey);
+        return routeClassName && linkSelector
+          ? [
+              `${LEFT_RAIL_PHASE_SELECTOR}.${routeClassName} ${linkSelector}`,
+              `${LEFT_RAIL_PHASE_SELECTOR}.${routeClassName} ${linkSelector} *`
+            ]
+          : [];
+      })
+      .join(",\n");
+
+    return `
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__main-navigation,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list {
+        background: ${railSurface} !important;
+        background-color: ${railSurface} !important;
+        background-image: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item > * {
+        background: ${railSurface} !important;
+        background-color: ${railSurface} !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-color: transparent !important;
+        outline: none !important;
+        position: relative !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'],
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu button,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item__text,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link span,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link svg {
+        color: ${railInk} !important;
+        fill: currentColor !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        filter: none !important;
+        opacity: 0.88 !important;
+        border: none !important;
+        outline: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a svg *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu button svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu button svg *,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link svg * {
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        filter: none !important;
+        opacity: 0.88 !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item__text,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link span {
+        font-size: 0.93rem !important;
+        letter-spacing: 0.01em !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item__text {
+        display: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container a,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item > button,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link {
+        background: ${railSurface} !important;
+        background-color: ${railSurface} !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        outline: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container {
+        isolation: isolate !important;
+        overflow: hidden !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container:hover,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container:hover,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container:focus-within,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container:focus-within,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item > button:hover,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item > button:focus-visible,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item a:hover,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item a:focus-visible {
+        background: ${railSelectedSurface} !important;
+        background-color: ${railSelectedSurface} !important;
+        background-image: none !important;
+        box-shadow: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container.ic-app-header__menu-list-item--active,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item--active {
+        background: ${railSelectedSurface} !important;
+        background-color: ${railSelectedSurface} !important;
+        background-image: none !important;
+        border-radius: 0 !important;
+        border-left: 2px solid rgba(255, 206, 72, 0.68) !important;
+        box-shadow: none !important;
+        outline: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a.active,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[aria-current='page'],
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'],
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item > button,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link.active,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link[aria-current='page'] {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        filter: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active::before,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active::after,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button::before,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button::after,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item--active::before,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item--active::after,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link.active::before,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link.active::after,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link[aria-current='page']::before,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link[aria-current='page']::after {
+        display: none !important;
+        content: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active a,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container a.active,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active .menu-item__text,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item--active .ic-app-header__menu-list-link,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item--active .ic-app-header__menu-list-link span,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link[aria-current='page'],
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link[aria-current='page'] span {
+        color: ${railInk} !important;
+        filter: none !important;
+        opacity: 0.88 !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a.active svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button svg *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #global_nav_dashboard_link svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item--active svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link[aria-current='page'] svg {
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        filter: none !important;
+        opacity: 0.88 !important;
+      }
+
+      ${routeSelectedNavSelectors} {
+        background: ${railSurface} !important;
+        background-color: ${railSurface} !important;
+        background-image: none !important;
+        border-left: 2px solid rgba(255, 206, 72, 0.68) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+
+      ${routeSelectedSurfaceSelectors} {
+        background: ${railSurface} !important;
+        background-color: ${railSurface} !important;
+        background-image: linear-gradient(0deg, ${railSelectedSurface}, ${railSelectedSurface}) !important;
+        box-shadow: none !important;
+      }
+
+      ${routeSelectedInkSelectors} {
+        color: ${railInk} !important;
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        filter: none !important;
+        opacity: 0.88 !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] > div.menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'].active > div.menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container {
+        background: ${railSurface} !important;
+        background-color: ${railSurface} !important;
+        background-image: linear-gradient(0deg, ${railSelectedSurface}, ${railSelectedSurface}) !important;
+        border-left: none !important;
+        box-shadow: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button {
+        background: ${railSurface} !important;
+        background-color: ${railSurface} !important;
+        background-image: linear-gradient(0deg, ${railSelectedSurface}, ${railSelectedSurface}) !important;
+        border-left: 2px solid rgba(255, 206, 72, 0.68) !important;
+        box-shadow: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] > div.menu-item-icon-container::after,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button::after,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'].active > div.menu-item-icon-container::after,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container::after {
+        display: none !important;
+        content: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] > div.menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] > div.menu-item-icon-container *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] > div.menu-item-icon-container svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] > div.menu-item-icon-container svg *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'].active > div.menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'].active > div.menu-item-icon-container *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'].active > div.menu-item-icon-container svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'].active > div.menu-item-icon-container svg *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container *,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container svg * {
+        color: ${railInk} !important;
+        fill: currentColor !important;
+        stroke: currentColor !important;
+        filter: none !important;
+        opacity: 0.88 !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__logomark-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__logomark-container {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item__badge,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-badge {
+        box-shadow: none !important;
+      }
+    `;
+  }
+
   function buildBaseCss(settings) {
     return `
       :root {
@@ -346,7 +643,11 @@ ${root.ui.buildTokenCss(settings)}
         ? editorialDashboardShellCss()
         : ""}
 
-      ${root.dashboard ? root.dashboard.getStyles() : ""}
+      ${root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_LEFT_RAIL_SIMPLIFICATION)
+        ? editorialLeftRailCss()
+        : ""}
+
+      ${root.dashboard ? root.dashboard.getStyles(settings) : ""}
     `;
   }
 
@@ -368,6 +669,12 @@ ${root.ui.buildTokenCss(settings)}
     );
     rootElement.classList.toggle("blank-canvas--dashboard", Boolean(settings.enabled && context.isDashboard));
     rootElement.classList.toggle("blank-canvas--quiet-cards", Boolean(settings.enabled && quietCards));
+    root.globalNav.ROUTE_KEYS.forEach((routeKey) => {
+      rootElement.classList.toggle(
+        root.globalNav.getRouteClassName(routeKey),
+        Boolean(settings.enabled && context.globalNavKey === routeKey)
+      );
+    });
     Object.keys(root.ui.layoutModes).forEach((modeId) => {
       rootElement.classList.toggle(`${LAYOUT_CLASS_PREFIX}${modeId}`, layoutMode === modeId);
     });
@@ -383,6 +690,9 @@ ${root.ui.buildTokenCss(settings)}
 
     Object.keys(root.ui.layoutModes).forEach((modeId) => {
       rootElement.classList.remove(`${LAYOUT_CLASS_PREFIX}${modeId}`);
+    });
+    root.globalNav.ROUTE_KEYS.forEach((routeKey) => {
+      rootElement.classList.remove(root.globalNav.getRouteClassName(routeKey));
     });
     root.ui.getPhaseDefinitions().forEach((phase) => {
       rootElement.classList.remove(phase.className);

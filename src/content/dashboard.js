@@ -25,12 +25,14 @@
     const widget =
       document.getElementById(root.dashboardStyles.WIDGET_ID) || root.dashboardView.createWidget();
     root.dashboardView.ensureWidgetPlacement(widget, mount);
+    const layoutVariant = root.dashboardView.syncPresentationState(widget, settings);
     root.dashboardView.renderItems(widget, assignmentSnapshot);
 
     return {
       rendered: true,
       itemCount: (assignmentSnapshot.items || []).length,
       mountFound: true,
+      layoutVariant,
       source: assignmentSnapshot.source,
       status: assignmentSnapshot.status
     };
