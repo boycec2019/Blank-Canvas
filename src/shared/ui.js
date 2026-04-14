@@ -5,6 +5,7 @@
   const PHASE_DASHBOARD_SHELL = "uiPhaseDashboardShell";
   const PHASE_LEFT_RAIL_SIMPLIFICATION = "uiPhaseLeftRailSimplification";
   const PHASE_AGENDA_LIST = "uiPhaseAgendaList";
+  const PHASE_ASSIGNMENT_HIERARCHY = "uiPhaseAssignmentHierarchy";
 
   const layoutModes = Object.freeze({
     classic: Object.freeze({
@@ -45,7 +46,7 @@
       description: "Switches the dashboard assignments widget toward a reading-list layout."
     }),
     Object.freeze({
-      id: "uiPhaseAssignmentHierarchy",
+      id: PHASE_ASSIGNMENT_HIERARCHY,
       className: "blank-canvas--phase-assignment-hierarchy",
       label: "Phase 5: Assignment row hierarchy",
       description: "Enables refined assignment row metadata and status emphasis."
@@ -218,6 +219,7 @@
     PHASE_DASHBOARD_SHELL,
     PHASE_LEFT_RAIL_SIMPLIFICATION,
     PHASE_AGENDA_LIST,
+    PHASE_ASSIGNMENT_HIERARCHY,
     layoutModes,
     phaseDefinitions,
     normalizeLayoutMode,

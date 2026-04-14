@@ -85,6 +85,9 @@
     if (root.dashboard) {
       root.dashboard.teardown();
     }
+    if (root.customAssignmentModal) {
+      root.customAssignmentModal.teardown();
+    }
     root.themeStyles.clearRootUiState();
     document.documentElement.classList.remove(
       "blank-canvas--enabled",

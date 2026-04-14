@@ -3,12 +3,11 @@
   const listeners = new Set();
   const state = root.assignmentStoreState.createState();
 
-  function getDomFallback() {
-    return root.assignmentDom.scrapePendingAssignmentsFromDom();
-  }
-
   function getSnapshot(fallbackItems) {
-    const resolvedFallback = fallbackItems === undefined ? getDomFallback() : fallbackItems;
+    const resolvedFallback =
+      fallbackItems === undefined
+        ? root.assignmentRefresh.getDomFallback(root.assignmentRefresh.buildCourseNames(document))
+        : fallbackItems;
     return root.assignmentStoreState.createSnapshot(state, resolvedFallback);
   }
 
@@ -38,28 +37,51 @@
       return getSnapshot();
     }
 
-    const domFallback = getDomFallback();
+    const context = root.assignmentRefresh.createRefreshContext(options);
     root.assignmentStoreState.beginRefresh(state);
 
-    const request = root.assignmentApi
-      .fetchPendingAssignmentsFromApi(options)
-      .then((items) => {
-        root.assignmentStoreState.applyRefreshSuccess(state, items, domFallback);
-        emit(domFallback);
-        return getSnapshot(domFallback);
+    const request = root.assignmentRefresh
+      .fetchMergedAssignments(context)
+      .then(({ mergedItems, mergedFallback }) => {
+        root.assignmentStoreState.applyRefreshSuccess(state, mergedItems, mergedFallback, {
+          ...context.options,
+          courseNames: context.courseNames
+        });
+        emit(context.domFallback);
+        return getSnapshot(mergedFallback);
       })
       .catch((error) => {
-        root.assignmentStoreState.applyRefreshFailure(state, domFallback, error);
-        emit(domFallback);
-        return getSnapshot(domFallback);
+        return root.assignmentRefresh.fetchFallbackWithCustom(context).then(({ mergedFallback }) => {
+            root.assignmentStoreState.applyRefreshFailure(state, mergedFallback, error, {
+              ...context.options,
+              courseNames: context.courseNames
+            });
+            emit(mergedFallback);
+            return getSnapshot(mergedFallback);
+          });
       })
       .finally(() => {
         state.inFlight = null;
       });
 
     state.inFlight = request;
-    root.assignmentStoreState.applyProvisionalFallback(state, domFallback);
-    emit(domFallback);
+    root.assignmentRefresh
+      .listCustomPendingAssignments(options)
+      .then((customItems) => {
+        const provisionalItems = root.assignmentRefresh.buildProvisionalFallback(context, customItems);
+        root.assignmentStoreState.applyProvisionalFallback(state, provisionalItems, {
+          ...context.options,
+          courseNames: context.courseNames
+        });
+        emit(provisionalItems);
+      })
+      .catch(() => {
+        root.assignmentStoreState.applyProvisionalFallback(state, context.domFallback, {
+          ...context.options,
+          courseNames: context.courseNames
+        });
+        emit(context.domFallback);
+      });
 
     return request;
   }

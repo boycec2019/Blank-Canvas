@@ -4,6 +4,10 @@
 
   function getStyles(settings) {
     const useAgendaList = root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_AGENDA_LIST);
+    const useAssignmentHierarchy = root.ui.isEditorialPhaseActive(
+      settings,
+      root.ui.PHASE_ASSIGNMENT_HIERARCHY
+    );
 
     return `
       #${WIDGET_ID} {
@@ -30,6 +34,12 @@
         margin-bottom: 10px;
       }
 
+      #${WIDGET_ID} .blank-canvas__todo-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
       #${WIDGET_ID} h2 {
         margin: 0;
         font-size: 1.1rem;
@@ -44,6 +54,34 @@
         color: var(--blank-canvas-color-muted);
         font-size: 0.92rem;
         white-space: nowrap;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-create,
+      #${WIDGET_ID} .blank-canvas__todo-action {
+        appearance: none;
+        border-radius: 999px;
+        cursor: pointer;
+        font: inherit;
+        transition:
+          background-color 140ms ease,
+          border-color 140ms ease,
+          color 140ms ease;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-create {
+        border: 1px solid var(--blank-canvas-border-strong);
+        background: rgba(255, 255, 255, 0.68);
+        color: var(--blank-canvas-color-text);
+        padding: 8px 12px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-create:hover,
+      #${WIDGET_ID} .blank-canvas__todo-create:focus-visible {
+        background: rgba(255, 255, 255, 0.86);
+        border-color: var(--blank-canvas-border-hover);
       }
 
       #${WIDGET_ID} .blank-canvas__todo-list {
@@ -87,7 +125,7 @@
         ${useAgendaList
           ? `
         grid-template-columns: minmax(0, 1fr) auto;
-        align-items: baseline;
+        align-items: ${useAssignmentHierarchy ? "start" : "baseline"};
         column-gap: 18px;
         row-gap: 6px;
         `
@@ -110,8 +148,8 @@
           border-color 140ms ease;
       }
 
-      #${WIDGET_ID} .blank-canvas__todo-link:hover,
-      #${WIDGET_ID} .blank-canvas__todo-link:focus-visible {
+      #${WIDGET_ID} a.blank-canvas__todo-link:hover,
+      #${WIDGET_ID} a.blank-canvas__todo-link:focus-visible {
         transform: ${useAgendaList ? "none" : "translateY(-1px)"};
         border-color: var(--blank-canvas-border-hover);
         box-shadow: ${useAgendaList ? "none" : "0 10px 20px rgba(50, 42, 29, 0.05)"};
@@ -128,6 +166,61 @@
         letter-spacing: -0.01em;
           `
           : ""}
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-main {
+        display: grid;
+        gap: ${useAssignmentHierarchy ? "6px" : "0"};
+        min-width: 0;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-meta {
+        display: ${useAssignmentHierarchy ? "flex" : "none"};
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-width: 0;
+        color: var(--blank-canvas-color-muted);
+        font-size: 0.84rem;
+        line-height: 1.25;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-course {
+        min-width: 0;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--blank-canvas-border-subtle);
+        background: rgba(255, 255, 255, 0.45);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-action {
+        border: 1px solid var(--blank-canvas-border-subtle);
+        background: rgba(255, 255, 255, 0.5);
+        color: var(--blank-canvas-color-muted);
+        padding: 4px 10px;
+        font-size: 0.76rem;
+        font-weight: 600;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-action:hover,
+      #${WIDGET_ID} .blank-canvas__todo-action:focus-visible {
+        background: rgba(255, 255, 255, 0.84);
+        border-color: var(--blank-canvas-border-hover);
+        color: var(--blank-canvas-color-text);
       }
 
       #${WIDGET_ID} .blank-canvas__todo-due-summary {
@@ -149,8 +242,18 @@
         border-color: var(--blank-canvas-border-danger);
       }
 
+      #${WIDGET_ID} .blank-canvas__todo-item[data-status-tone='missing'] .blank-canvas__todo-status {
+        color: var(--blank-canvas-color-danger);
+        border-color: var(--blank-canvas-border-danger);
+      }
+
       #${WIDGET_ID} .blank-canvas__todo-item[data-status-tone='missing'] .blank-canvas__todo-due-summary {
         color: var(--blank-canvas-color-danger);
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-item[data-status-tone='late'] .blank-canvas__todo-status,
+      #${WIDGET_ID} .blank-canvas__todo-item[data-status-tone='overdue'] .blank-canvas__todo-status {
+        color: var(--blank-canvas-color-warning);
       }
 
       #${WIDGET_ID} .blank-canvas__todo-item[data-status-tone='late'] .blank-canvas__todo-due-summary,
@@ -166,6 +269,15 @@
       ${useAgendaList
         ? `
       @media (max-width: 720px) {
+        #${WIDGET_ID} .blank-canvas__todo-header {
+          flex-direction: column;
+        }
+
+        #${WIDGET_ID} .blank-canvas__todo-header-actions {
+          width: 100%;
+          justify-content: space-between;
+        }
+
         #${WIDGET_ID} .blank-canvas__todo-link {
           grid-template-columns: 1fr;
           align-items: start;

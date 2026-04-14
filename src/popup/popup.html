@@ -22,7 +22,9 @@
             <p class="eyebrow">Pending only</p>
             <h2>To-do list</h2>
           </div>
-          <button type="button" id="refresh-todo" class="secondary quiet-button">Refresh</button>
+          <div class="panel-actions">
+            <button type="button" id="refresh-todo" class="secondary quiet-button">Refresh</button>
+          </div>
         </div>
         <p id="todo-summary">Open a Canvas tab to load pending assignments.</p>
         <ul id="todo-list" class="todo-list" aria-live="polite">
@@ -138,7 +140,13 @@
     <script src="../shared/debug.js"></script>
     <script src="../shared/course-nav-utils.js"></script>
     <script src="../shared/storage.js"></script>
+    <script src="../shared/custom-assignments.js"></script>
     <script src="../shared/settings-ui.js"></script>
+    <script src="../content/assignment-utils.js"></script>
+    <script src="../content/assignment-course-resolver.js"></script>
+    <script src="../content/assignment-display.js"></script>
+    <script src="../content/assignment-row-model.js"></script>
+    <script src="../content/assignment-formatters.js"></script>
     <script src="./popup.js"></script>
   </body>
 </html>

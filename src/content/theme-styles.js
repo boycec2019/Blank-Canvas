@@ -648,6 +648,8 @@ ${root.ui.buildTokenCss(settings)}
         : ""}
 
       ${root.dashboard ? root.dashboard.getStyles(settings) : ""}
+
+      ${root.customAssignmentModal ? root.customAssignmentModal.getStyles(settings) : ""}
     `;
   }
 

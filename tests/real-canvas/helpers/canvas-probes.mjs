@@ -95,3 +95,53 @@ export async function collectHeaderSnapshot(page) {
     };
   });
 }
+
+export async function collectDashboardTodoSnapshot(page) {
+  return page.evaluate(() => {
+    const widget = document.getElementById("blank-canvas-dashboard-todo");
+    const rows = widget ? Array.from(widget.querySelectorAll(".blank-canvas__todo-item")) : [];
+    const fallbackPattern = /^Course\s+\d{3,}$/i;
+
+    const rowSummaries = rows.map((row) => {
+      const title = row.querySelector(".blank-canvas__todo-title");
+      const course = row.querySelector(".blank-canvas__todo-course");
+      const status = row.querySelector(".blank-canvas__todo-status");
+      const due = row.querySelector(".blank-canvas__todo-due-summary");
+
+      return {
+        titleText: title ? title.textContent.trim() : "",
+        courseText: course ? course.textContent.trim() : "",
+        statusText: status ? status.textContent.trim() : "",
+        dueText: due ? due.textContent.trim() : ""
+      };
+    });
+
+    return {
+      rendered: Boolean(widget),
+      layoutVariant: widget ? widget.dataset.layoutVariant || "classic" : "none",
+      rowVariant: widget ? widget.dataset.rowVariant || "legacy" : "none",
+      itemCount: widget ? Number(widget.dataset.itemCount || 0) : 0,
+      fallbackCourseCount: widget ? Number(widget.dataset.fallbackCourseCount || 0) : 0,
+      normalizedTitleCount: widget ? Number(widget.dataset.normalizedTitleCount || 0) : 0,
+      hasLauncher: Boolean(widget && widget.querySelector(".blank-canvas__todo-create")),
+      customActionCount: widget ? widget.querySelectorAll(".blank-canvas__todo-action").length : 0,
+      hasStructuredRows: Boolean(
+        widget &&
+          widget.querySelector(".blank-canvas__todo-main") &&
+          widget.querySelector(".blank-canvas__todo-title") &&
+          widget.querySelector(".blank-canvas__todo-meta") &&
+          widget.querySelector(".blank-canvas__todo-due-summary")
+      ),
+      duplicateHeadlineCount: rowSummaries.filter((row) => {
+        return (
+          row.courseText &&
+          row.titleText &&
+          row.titleText.toLowerCase().includes(row.courseText.toLowerCase()) &&
+          row.titleText.toLowerCase() !== row.courseText.toLowerCase()
+        );
+      }).length,
+      fallbackRows: rowSummaries.filter((row) => fallbackPattern.test(row.courseText)),
+      rowSummaries
+    };
+  });
+}

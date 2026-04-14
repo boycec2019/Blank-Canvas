@@ -65,5 +65,8 @@ npm run test:real:update
 - This suite is intentionally small and focused on fragile UI surfaces.
 - Keep fixture tests for fast regression coverage.
 - Use this suite when a bug only appears on the real Canvas DOM or when visual verification matters.
+- Real screenshots are best for stable chrome like the left rail; dynamic content areas such as the assignments widget should use structural assertions instead of saved screenshots.
 - The real-page specs use a persistent Chromium context with the unpacked extension loaded, so screenshots and DOM probes should reflect the page with Blank Canvas enabled.
 - If the suite opens Canvas logged out, regenerate the storage state and make sure `BLANK_CANVAS_BASE_URL` matches the exact Canvas domain used when the state file was created.
+- The specs now fail early with a clear auth error if Canvas opens on a login page, so an expired session should not be mistaken for an extension-mount regression.
+- The suite also runs a global auth precheck before the real tests start, so an expired session should stop the run once instead of producing a long list of misleading per-test failures.

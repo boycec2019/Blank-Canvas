@@ -23,12 +23,18 @@
 
   function createSnapshot(state, fallbackItems = []) {
     const visibleItems = hasStoredItems(state) ? state.items : fallbackItems;
+    const sourceCounts = visibleItems.reduce((result, item) => {
+      const source = item && item.source ? item.source : "unknown";
+      result[source] = (result[source] || 0) + 1;
+      return result;
+    }, {});
 
     return {
       error: state.error,
       items: cloneItems(visibleItems),
       lastLoadedAt: state.lastLoadedAt,
       source: hasStoredItems(state) ? state.source : "dom",
+      sourceCounts,
       status: state.status
     };
   }
@@ -55,12 +61,20 @@
     state.error = null;
   }
 
-  function applyProvisionalFallback(state, fallbackItems = []) {
+  function stabilizeVisibleItems(state, items = [], fallbackItems = [], options = {}) {
+    return root.assignmentCourseResolver.stabilizeAssignments(items, {
+      previousItems: state.items,
+      fallbackItems,
+      courseNames: options.courseNames
+    });
+  }
+
+  function applyProvisionalFallback(state, fallbackItems = [], options = {}) {
     if (hasStoredItems(state) || !fallbackItems.length) {
       return;
     }
 
-    state.items = cloneItems(fallbackItems);
+    state.items = stabilizeVisibleItems(state, fallbackItems, fallbackItems, options);
     state.source = "dom";
   }
 
@@ -68,7 +82,7 @@
     const hasApiItems = Boolean(apiItems.length);
     const resolvedItems = hasApiItems ? apiItems : fallbackItems;
 
-    state.items = cloneItems(resolvedItems);
+    state.items = stabilizeVisibleItems(state, resolvedItems, fallbackItems, options);
     state.source = hasApiItems ? "api" : "dom";
     state.status = "ready";
     state.error = null;
@@ -76,7 +90,7 @@
   }
 
   function applyRefreshFailure(state, fallbackItems = [], error, options = {}) {
-    state.items = cloneItems(fallbackItems);
+    state.items = stabilizeVisibleItems(state, fallbackItems, fallbackItems, options);
     state.source = "dom";
     state.status = fallbackItems.length ? "ready" : "error";
     state.error = String(error);

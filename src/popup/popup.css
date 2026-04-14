@@ -56,6 +56,11 @@ body {
   gap: 12px;
 }
 
+.panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .panel-heading h2 {
   margin: 4px 0 0;
   font-size: 1.12rem;
@@ -166,7 +171,14 @@ button.secondary {
   padding-top: 8px;
 }
 
-button.todo-link {
+.todo-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.todo-link {
   width: 100%;
   padding: 0;
   border-radius: 0;
@@ -175,22 +187,49 @@ button.todo-link {
   text-align: left;
   font: inherit;
   display: grid;
-  gap: 4px;
+  gap: 5px;
 }
 
+a.todo-link,
+button.todo-link {
+  border: none;
+  cursor: pointer;
+}
+
+a.todo-link:hover,
+a.todo-link:focus-visible,
 button.todo-link:hover,
 button.todo-link:focus-visible {
   color: var(--blank-canvas-color-accent, #153e75);
 }
 
 .todo-title,
-.todo-due {
+.todo-due,
+.todo-meta {
   display: block;
 }
 
 .todo-title {
   font-weight: 700;
   line-height: 1.35;
+}
+
+.todo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--blank-canvas-color-muted, #5e6b82);
+  font-size: 0.78rem;
+}
+
+.todo-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--blank-canvas-border-subtle, rgba(16, 32, 58, 0.1));
+  background: var(--blank-canvas-color-surface-muted, rgba(240, 244, 251, 0.8));
+  font-weight: 600;
 }
 
 .todo-due {

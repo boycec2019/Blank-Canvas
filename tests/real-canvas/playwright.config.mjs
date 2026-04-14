@@ -12,7 +12,9 @@ const screenshotMode = process.env.BLANK_CANVAS_SCREENSHOTS || "on";
 
 export default defineConfig({
   testDir: __dirname,
+  globalSetup: path.join(__dirname, "global-setup.mjs"),
   fullyParallel: false,
+  workers: 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],

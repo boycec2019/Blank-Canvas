@@ -1,19 +1,6 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
 
-  function buildSignature(items) {
-    return items
-      .map((item) =>
-        [
-          item.displayTitle,
-          item.dueSummaryText,
-          item.statusTone,
-          item.url
-        ].join("|")
-      )
-      .join("||");
-  }
-
   function createElement(tagName, className, textContent) {
     const element = document.createElement(tagName);
     if (className) {
@@ -34,25 +21,38 @@
     widget.id = root.dashboardStyles.WIDGET_ID;
     widget.setAttribute("aria-label", "Assignments");
     widget.dataset.layoutVariant = "classic";
+    widget.dataset.rowVariant = "legacy";
 
     const header = createElement("header", "blank-canvas__todo-header");
     const heading = createElement("h2", "", "Assignments");
     const count = createElement("p", "blank-canvas__todo-count");
+    const headerActions = createElement("div", "blank-canvas__todo-header-actions");
+    const createButton = createElement("button", "blank-canvas__todo-create", "New custom");
+    createButton.type = "button";
     const content = createElement("div", "blank-canvas__todo-content");
 
-    header.append(heading, count);
+    headerActions.append(count, createButton);
+    header.append(heading, headerActions);
     widget.append(header, content);
+    widget.addEventListener("click", root.dashboardWidgetActions.handleWidgetClick);
 
     return widget;
   }
 
   function syncPresentationState(widget, settings) {
-    const variant = root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_AGENDA_LIST)
+    const layoutVariant = root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_AGENDA_LIST)
       ? "agenda"
       : "classic";
+    const rowVariant = root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_ASSIGNMENT_HIERARCHY)
+      ? "hierarchy"
+      : "legacy";
 
-    widget.dataset.layoutVariant = variant;
-    return variant;
+    widget.dataset.layoutVariant = layoutVariant;
+    widget.dataset.rowVariant = rowVariant;
+    return {
+      layoutVariant,
+      rowVariant
+    };
   }
 
   function ensureWidgetPlacement(widget, mount) {
@@ -79,61 +79,16 @@
     return true;
   }
 
-  function renderEmptyState(content, message) {
-    content.replaceChildren(createElement("p", "blank-canvas__todo-empty", message));
-  }
-
-  function createAssignmentCard(item) {
-    const listItem = createElement("li", "blank-canvas__todo-item");
-    const link = createElement("a", "blank-canvas__todo-link");
-    const title = createElement("span", "blank-canvas__todo-title", item.displayTitle || item.title);
-    const dueSummary = createElement(
-      "span",
-      "blank-canvas__todo-due-summary",
-      item.dueSummaryText || item.dueDateText
-    );
-
-    listItem.dataset.statusTone = item.statusTone || "pending";
-    link.href = item.url;
-    link.append(title, dueSummary);
-    listItem.appendChild(link);
-
-    return listItem;
-  }
-
   function renderItems(widget, snapshot) {
     const items = snapshot.items || [];
-    const content = widget.querySelector(".blank-canvas__todo-content");
-    const count = widget.querySelector(".blank-canvas__todo-count");
-    const signature = buildSignature(items);
-    const currentSignature = widget.dataset.signature || "";
-
-    count.textContent = formatAssignmentCount(items.length);
-    widget.dataset.itemCount = String(items.length);
-
-    if (!items.length) {
-      widget.dataset.signature = signature;
-      renderEmptyState(
-        content,
-        snapshot.status === "loading"
-          ? "Loading assignments from Canvas..."
-          : "Nothing pending right now."
-      );
-      return;
-    }
-
-    if (currentSignature === signature) {
-      return;
-    }
-
-    widget.dataset.signature = signature;
-
-    const list = createElement("ul", "blank-canvas__todo-list");
-    items.forEach((item) => {
-      list.appendChild(createAssignmentCard(item));
+    const rowItems = root.assignmentRowModel.buildAssignmentRows(items, {
+      courseNames: root.assignmentUtils.buildCourseNameMap(document)
     });
 
-    content.replaceChildren(list);
+    root.dashboardRowRenderer.renderItems(widget, snapshot, {
+      formatAssignmentCount,
+      rowItems
+    });
   }
 
   function getSnapshot() {
@@ -142,7 +97,14 @@
     return {
       rendered: Boolean(widget),
       itemCount: widget ? Number(widget.dataset.itemCount || 0) : 0,
-      layoutVariant: widget ? widget.dataset.layoutVariant || "classic" : "none"
+      layoutVariant: widget ? widget.dataset.layoutVariant || "classic" : "none",
+      rowVariant: widget ? widget.dataset.rowVariant || "legacy" : "none",
+      fallbackCourseCount: widget ? Number(widget.dataset.fallbackCourseCount || 0) : 0,
+      normalizedTitleCount: widget ? Number(widget.dataset.normalizedTitleCount || 0) : 0,
+      source: widget ? widget.dataset.assignmentSource || "dom" : "none",
+      status: widget ? widget.dataset.assignmentStatus || "idle" : "idle",
+      customItemCount: widget ? Number(widget.dataset.customItemCount || 0) : 0,
+      hasCustomItems: widget ? Number(widget.dataset.customItemCount || 0) > 0 : false
     };
   }
 

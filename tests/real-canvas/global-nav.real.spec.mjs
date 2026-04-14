@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures.mjs";
+import { assertCanvasAuthenticated } from "./helpers/auth-guards.mjs";
 import { collectRailSnapshot } from "./helpers/canvas-probes.mjs";
 import { REAL_CANVAS_ROUTES, resolveCanvasUrl } from "./helpers/routes.mjs";
 
@@ -28,6 +29,7 @@ test.describe("Real Canvas global navigation smoke", () => {
       await page.goto(resolveCanvasUrl(canvasBaseURL, scenario.route), {
         waitUntil: "networkidle"
       });
+      await assertCanvasAuthenticated(page, canvasBaseURL);
 
       const snapshot = await collectRailSnapshot(page);
 

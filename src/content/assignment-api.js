@@ -110,11 +110,17 @@
 
     const courseNames = options.courseNames || {};
     const courseId = String(item.course_id || root.assignmentUtils.extractCourseId(url) || "");
-    const courseName = courseNames[courseId] || (courseId ? `Course ${courseId}` : "Canvas course");
+    const resolvedCourse = root.assignmentCourseResolver.resolveCourseName({
+      courseId,
+      courseMapName: courseNames[courseId],
+      itemCourseName: courseNames[courseId]
+    });
 
     return {
+      courseId,
       title,
-      courseName,
+      courseName: resolvedCourse.courseName,
+      courseNameSource: resolvedCourse.debugSource,
       dueLabel: getDueLabel(item),
       dueAt:
         item.plannable_date ||
@@ -161,7 +167,10 @@
       nextUrl = readNextLink(response.headers.get("Link"));
     }
 
-    return root.assignmentFormatting.decoratePendingAssignments(collectedItems, options);
+    return root.assignmentFormatting.decoratePendingAssignments(collectedItems, {
+      ...options,
+      courseNames
+    });
   }
 
   root.assignmentApi = {

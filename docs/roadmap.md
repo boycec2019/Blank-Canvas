@@ -141,6 +141,8 @@ Done when:
 
 Goal: make each assignment row clearer and more readable with stronger metadata hierarchy.
 
+Status: implemented.
+
 Scope:
 
 - Refine title, course name, date, and status emphasis.

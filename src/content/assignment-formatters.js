@@ -18,19 +18,32 @@
       sourceItem.dueLabel,
       options
     );
-    const courseName = root.assignmentDisplay.formatCourseName(sourceItem.courseName);
+    const statusTone = root.assignmentDisplay.getStatusTone(sourceItem.dueLabel);
+    const normalizedItem = root.assignmentCourseResolver.stabilizeAssignments(
+      [
+        {
+          ...sourceItem,
+          courseId:
+            sourceItem.courseId || root.assignmentUtils.extractCourseId(sourceItem.url) || "",
+          dueDateText: dueDisplay.dueDateText,
+          dueTimeText: dueDisplay.dueTimeText,
+          dueSummaryText: dueDisplay.dueSummaryText,
+          dueSortValue: dueDisplay.dueSortValue,
+          statusTone
+        }
+      ],
+      {
+        courseNames: options.courseNames
+      }
+    )[0];
 
-    return {
-      ...sourceItem,
-      courseNameRaw: sourceItem.courseName,
-      courseName,
-      displayTitle: root.assignmentDisplay.buildDisplayTitle(sourceItem.title, courseName),
-      dueDateText: dueDisplay.dueDateText,
-      dueTimeText: dueDisplay.dueTimeText,
-      dueSummaryText: dueDisplay.dueSummaryText,
-      dueSortValue: dueDisplay.dueSortValue,
-      statusTone: root.assignmentDisplay.getStatusTone(sourceItem.dueLabel)
-    };
+    return root.assignmentRowModel.buildAssignmentRow(
+      {
+        ...normalizedItem,
+        courseNameRaw: sourceItem.courseName
+      },
+      options
+    );
   }
 
   function comparePendingAssignments(left, right) {
@@ -45,8 +58,8 @@
       return left.dueSortValue - right.dueSortValue;
     }
 
-    return String(left.displayTitle || left.title || "").localeCompare(
-      String(right.displayTitle || right.title || "")
+    return String(left.primaryTitle || left.title || "").localeCompare(
+      String(right.primaryTitle || right.title || "")
     );
   }
 
@@ -62,8 +75,11 @@
     comparePendingAssignments,
     decoratePendingAssignment,
     decoratePendingAssignments,
-    formatCourseName: root.assignmentDisplay.formatCourseName,
+    formatCourseName: root.assignmentCourseResolver.normalizeCourseName,
     formatDueDisplay: root.assignmentDisplay.formatDueDisplay,
-    getStatusTone: root.assignmentDisplay.getStatusTone
+    getStatusTone: root.assignmentDisplay.getStatusTone,
+    mergePendingAssignments(items, options = {}) {
+      return decoratePendingAssignments(items, options);
+    }
   };
 })();

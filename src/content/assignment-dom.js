@@ -109,14 +109,15 @@
     };
   }
 
-  function resolveCourseName(container, assignmentUrl, courseNames, scope = document) {
+  function collectCourseNameCandidates(container, assignmentUrl, courseNames, scope = document) {
     const courseId = root.assignmentUtils.extractCourseId(assignmentUrl);
     if (!courseId) {
-      return "Canvas course";
-    }
-
-    if (courseNames[courseId]) {
-      return courseNames[courseId];
+      return {
+        courseId: "",
+        courseMapName: "",
+        localCourseName: "",
+        scopedCourseName: ""
+      };
     }
 
     const courseLink = Array.from(container.querySelectorAll("a[href*='/courses/']")).find((anchor) => {
@@ -127,10 +128,6 @@
       );
     });
 
-    if (courseLink) {
-      return root.assignmentUtils.normalizeText(courseLink.textContent);
-    }
-
     const scopedCourseLink = Array.from(scope.querySelectorAll("a[href*='/courses/']")).find((anchor) => {
       return (
         !root.assignmentUtils.isAssignmentUrl(anchor.href) &&
@@ -139,11 +136,14 @@
       );
     });
 
-    if (scopedCourseLink) {
-      return root.assignmentUtils.normalizeText(scopedCourseLink.textContent);
-    }
-
-    return `Course ${courseId}`;
+    return {
+      courseId,
+      courseMapName: courseNames[courseId] || "",
+      localCourseName: courseLink ? root.assignmentUtils.normalizeText(courseLink.textContent) : "",
+      scopedCourseName: scopedCourseLink
+        ? root.assignmentUtils.normalizeText(scopedCourseLink.textContent)
+        : ""
+    };
   }
 
   function buildPendingAssignment(link, courseNames, scope = document) {
@@ -175,9 +175,19 @@
 
     const dueInfo = extractDueInfo(container);
 
+    const courseCandidates = collectCourseNameCandidates(container, link.href, courseNames, scope);
+    const resolvedCourse = root.assignmentCourseResolver.resolveCourseName({
+      courseId: courseCandidates.courseId,
+      courseMapName: courseCandidates.courseMapName,
+      localCourseName: courseCandidates.localCourseName,
+      scopedCourseName: courseCandidates.scopedCourseName
+    });
+
     return {
+      courseId: courseCandidates.courseId,
       title,
-      courseName: resolveCourseName(container, link.href, courseNames, scope),
+      courseName: resolvedCourse.courseName,
+      courseNameSource: resolvedCourse.debugSource,
       dueLabel: dueInfo.dueLabel,
       dueAt: dueInfo.dueAt,
       url: root.assignmentUtils.getUrl(link.href).toString()
@@ -185,7 +195,7 @@
   }
 
   function scrapePendingAssignmentsFromDom(scope = document, options = {}) {
-    const courseNames = root.assignmentUtils.buildCourseNameMap(scope);
+    const courseNames = options.courseNames || root.assignmentUtils.buildCourseNameMap(scope);
     const seenUrls = new Set();
     const containers = root.utils.safeQueryAll(assignmentContainerSelectors, scope);
     const items = [];
@@ -220,7 +230,10 @@
       });
     }
 
-    return root.assignmentFormatting.decoratePendingAssignments(items, options);
+    return root.assignmentFormatting.decoratePendingAssignments(items, {
+      ...options,
+      courseNames
+    });
   }
 
   root.assignmentDom = {

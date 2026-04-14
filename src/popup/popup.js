@@ -12,7 +12,12 @@
   const uiLayoutModeField = document.getElementById("uiLayoutMode");
   const uiPhaseSummary = document.getElementById("ui-phase-summary");
   let todoTabId = null;
+  let todoTabIsCanvas = false;
   let currentSettings = { ...root.defaults };
+
+  function getPopupEnvironment() {
+    return root.popupEnvironment || {};
+  }
 
   function setStatus(message) {
     statusText.textContent = message;
@@ -27,6 +32,11 @@
   }
 
   async function getActiveTab() {
+    const environment = getPopupEnvironment();
+    if (typeof environment.getActiveTab === "function") {
+      return environment.getActiveTab();
+    }
+
     const tabs = await chrome.tabs.query({
       active: true,
       currentWindow: true
@@ -36,6 +46,11 @@
   }
 
   function requestTabMessage(tabId, message) {
+    const environment = getPopupEnvironment();
+    if (typeof environment.requestTabMessage === "function") {
+      return environment.requestTabMessage(tabId, message);
+    }
+
     return new Promise((resolve, reject) => {
       chrome.tabs.sendMessage(tabId, message, (response) => {
         if (chrome.runtime.lastError) {
@@ -62,51 +77,66 @@
     setStatus("Settings saved.");
   }
 
-  function setTodoLoading(message) {
-    todoList.replaceChildren();
-    const item = document.createElement("li");
-    item.className = "todo-empty";
-    item.textContent = message;
-    todoList.appendChild(item);
+  function createElement(tagName, className, textContent) {
+    const element = document.createElement(tagName);
+    if (className) {
+      element.className = className;
+    }
+    if (textContent !== undefined) {
+      element.textContent = textContent;
+    }
+    return element;
   }
 
-  function buildTodoItem(item) {
-    const listItem = document.createElement("li");
-    listItem.className = "todo-item";
+  function setTodoLoading(message) {
+    todoList.replaceChildren();
+    todoList.appendChild(createElement("li", "todo-empty", message));
+  }
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "todo-link";
-    button.dataset.url = item.url;
+  function buildTodoSurface(item) {
+    const surface = createElement(item.url ? "button" : "div", "todo-link");
+    if (item.url) {
+      surface.type = "button";
+      surface.dataset.url = item.url;
+    }
 
-    const title = document.createElement("span");
-    title.className = "todo-title";
-    title.textContent = item.displayTitle || item.title;
+    const title = createElement("span", "todo-title", item.primaryTitle || item.title);
+    const meta = createElement("span", "todo-meta");
+    const course = item.secondaryCourseName
+      ? createElement("span", "", item.secondaryCourseName)
+      : null;
+    const status = item.statusLabel ? createElement("span", "todo-tag", item.statusLabel) : null;
+    const sourceTag = item.source === "custom" ? createElement("span", "todo-tag", "Custom") : null;
+    const due = createElement(
+      "span",
+      "todo-due",
+      item.dueSummaryText || item.dueDateText || item.dueLabel || "Due date not listed"
+    );
 
-    const dueSummary = document.createElement("span");
-    dueSummary.className = "todo-due";
-    dueSummary.textContent = item.dueSummaryText || item.dueDateText || item.dueLabel || "Due date not listed";
+    [course, status, sourceTag].filter(Boolean).forEach((part) => meta.appendChild(part));
+    surface.appendChild(title);
+    if (meta.childElementCount) {
+      surface.appendChild(meta);
+    }
+    surface.appendChild(due);
 
-    button.append(title, dueSummary);
-    listItem.appendChild(button);
-
-    return listItem;
+    return surface;
   }
 
   function renderTodoItems(items) {
     todoList.replaceChildren();
 
     if (!items.length) {
-      const item = document.createElement("li");
-      item.className = "todo-empty";
-      item.textContent = "No pending assignments found on this page.";
-      todoList.appendChild(item);
+      todoList.appendChild(createElement("li", "todo-empty", "No pending assignments found."));
       return;
     }
 
     const fragment = document.createDocumentFragment();
     items.forEach((item) => {
-      fragment.appendChild(buildTodoItem(item));
+      const listItem = createElement("li", "todo-item");
+      listItem.dataset.source = item.source || "unknown";
+      listItem.appendChild(buildTodoSurface(item));
+      fragment.appendChild(listItem);
     });
     todoList.appendChild(fragment);
   }
@@ -116,6 +146,18 @@
     setTodoLoading(message);
   }
 
+  async function loadCustomOnlyAssignments() {
+    const items = await root.customAssignments.listPendingAssignments({
+      courseNames: {}
+    });
+
+    todoSummary.textContent = items.length
+      ? `${items.length} saved custom assignment${items.length === 1 ? "" : "s"}. Open Canvas to merge posted assignments.`
+      : "No custom assignments yet. Open Canvas to load posted assignments too.";
+    renderTodoItems(items);
+    return items;
+  }
+
   async function loadPendingAssignments() {
     setStatus("Loading pending assignments...");
     renderTodoState("Checking the current Canvas tab.", "Looking for assignments...");
@@ -123,8 +165,9 @@
     const activeTab = await getActiveTab();
     if (!activeTab || !activeTab.id) {
       todoTabId = null;
-      renderTodoState("No active tab found.", "Open Canvas and try again.");
-      setStatus("Could not find an active tab.");
+      todoTabIsCanvas = false;
+      await loadCustomOnlyAssignments();
+      setStatus("Showing saved custom assignments.");
       return;
     }
 
@@ -135,16 +178,19 @@
         type: "blank-canvas:pending-assignments"
       });
       const items = Array.isArray(response && response.items) ? response.items : [];
-      todoSummary.textContent = `${items.length} pending assignment${items.length === 1 ? "" : "s"} from the active Canvas tab.`;
+      const sourceCounts = response && response.sourceCounts ? response.sourceCounts : {};
+      const customCount = Number(sourceCounts.custom || 0);
+
+      todoTabIsCanvas = true;
+      todoSummary.textContent = customCount
+        ? `${items.length} pending assignments from the active Canvas tab, including ${customCount} custom item${customCount === 1 ? "" : "s"}.`
+        : `${items.length} pending assignment${items.length === 1 ? "" : "s"} from the active Canvas tab.`;
       renderTodoItems(items);
       setStatus("Pending assignments loaded.");
     } catch (error) {
-      todoTabId = null;
-      renderTodoState(
-        "Canvas page not available.",
-        "Open a Canvas page in the active tab, then refresh."
-      );
-      setStatus("Could not read assignments from this tab.");
+      todoTabIsCanvas = false;
+      await loadCustomOnlyAssignments();
+      setStatus("Canvas page not available; showing custom assignments only.");
       root.debug.warn("popup", "Pending assignments could not be loaded.", String(error));
     }
   }
@@ -170,6 +216,15 @@
           : "none"
       }`,
       `Pending assignments: ${report.pendingAssignmentsCount || 0}`,
+      `Combined assignments: ${report.pendingAssignmentsCombinedCount || report.pendingAssignmentsCount || 0}`,
+      `Custom assignments: ${report.pendingAssignmentsCustomCount || 0}`,
+      `Source counts: ${
+        report.pendingAssignmentsSourceCounts
+          ? Object.entries(report.pendingAssignmentsSourceCounts)
+              .map(([key, count]) => `${key}:${count}`)
+              .join(", ") || "none"
+          : "none"
+      }`,
       `Assignments updated: ${
         report.pendingAssignmentsLastLoadedAt
           ? new Date(report.pendingAssignmentsLastLoadedAt).toISOString()
@@ -179,6 +234,10 @@
       `Assignment status: ${report.pendingAssignmentsStatus || "idle"}`,
       `Assignment error: ${report.pendingAssignmentsError || "none"}`,
       `Dashboard to-do rendered: ${Boolean(report.dashboardTodo && report.dashboardTodo.rendered)}`,
+      `Dashboard custom items rendered: ${report.dashboardTodo ? report.dashboardTodo.customItemCount || 0 : 0}`,
+      `Custom modal mounted: ${Boolean(report.customAssignmentModal && report.customAssignmentModal.mounted)}`,
+      `Custom modal open: ${Boolean(report.customAssignmentModal && report.customAssignmentModal.open)}`,
+      `Custom modal course options: ${report.customAssignmentModal ? report.customAssignmentModal.courseOptionCount || 0 : 0}`,
       ""
     ];
 
@@ -231,23 +290,16 @@
       return;
     }
 
-    chrome.tabs.sendMessage(
-      activeTab.id,
-      {
+    try {
+      const response = await requestTabMessage(activeTab.id, {
         type: "blank-canvas:diagnostics"
-      },
-      (response) => {
-        if (chrome.runtime.lastError) {
-          diagnosticsOutput.textContent =
-            "Open an active Canvas page, then run diagnostics again.";
-          setStatus("No Blank Canvas content script found on this tab.");
-          return;
-        }
-
-        diagnosticsOutput.textContent = formatDiagnostics(response);
-        setStatus("Diagnostics complete.");
-      }
-    );
+      });
+      diagnosticsOutput.textContent = formatDiagnostics(response);
+      setStatus("Diagnostics complete.");
+    } catch (error) {
+      diagnosticsOutput.textContent = "Open an active Canvas page, then run diagnostics again.";
+      setStatus("No Blank Canvas content script found on this tab.");
+    }
   }
 
   async function initialize() {
@@ -304,7 +356,7 @@
       }
 
       const button = event.target.closest(".todo-link");
-      if (!button || !todoTabId) {
+      if (!button || !todoTabId || !todoTabIsCanvas || !button.dataset.url) {
         return;
       }
 

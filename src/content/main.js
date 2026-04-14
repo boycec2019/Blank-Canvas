@@ -4,6 +4,7 @@
   let currentSettings = { ...root.defaults };
   let lastUrl = window.location.href;
   let unsubscribeAssignments = null;
+  let unsubscribeCustomAssignments = null;
 
   if (!chrome.runtime || !chrome.runtime.onMessage) {
     return;
@@ -44,10 +45,20 @@
               pagePath: root.canvas.getPageContext().path,
               generatedAt: new Date().toISOString(),
               source: snapshot.source,
+              sourceCounts: snapshot.sourceCounts,
               status: snapshot.status
             });
           });
         return true;
+      }
+
+      if (message.type === "blank-canvas:course-options") {
+        sendResponse({
+          items: root.assignmentUtils.buildCourseOptions(document, root.canvas.getPageContext()),
+          pagePath: root.canvas.getPageContext().path,
+          generatedAt: new Date().toISOString()
+        });
+        return;
       }
 
       if (message.type === "blank-canvas:rerender") {
@@ -111,6 +122,12 @@
       rerender();
     });
 
+    if (root.customAssignments) {
+      unsubscribeCustomAssignments = root.customAssignments.onChanged(() => {
+        root.assignments.invalidate();
+      });
+    }
+
     root.storage.onSettingsChanged((nextSettings) => {
       currentSettings = nextSettings;
       root.debug.setFlags(nextSettings);
@@ -124,6 +141,9 @@
   initialize().catch((error) => {
     if (unsubscribeAssignments) {
       unsubscribeAssignments();
+    }
+    if (unsubscribeCustomAssignments) {
+      unsubscribeCustomAssignments();
     }
     root.debug.error("main", "Initialization failed.", String(error));
   });

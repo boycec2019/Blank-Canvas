@@ -1,7 +1,6 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
   const LARGE_SORT_VALUE = Number.MAX_SAFE_INTEGER;
-  const ACADEMIC_TERM_PATTERN = /\b(Spring|Summer|Fall|Winter)\s+\d{4}\b/gi;
   const dateFormatterCache = new Map();
   const timeFormatterCache = new Map();
 
@@ -74,43 +73,12 @@
     return "pending";
   }
 
-  function collapseRepeatedPrefix(value) {
-    const normalized = root.assignmentUtils.normalizeText(value);
-    const maxPrefixLength = Math.floor(normalized.length / 2);
-
-    for (let prefixLength = 4; prefixLength <= maxPrefixLength; prefixLength += 1) {
-      const prefix = normalized.slice(0, prefixLength).trim();
-      if (prefix.length < 4) {
-        continue;
-      }
-
-      const doubledPrefix = `${prefix}${prefix}`;
-      if (!normalized.startsWith(doubledPrefix)) {
-        continue;
-      }
-
-      const remainder = normalized.slice(doubledPrefix.length).trim();
-      if (!remainder || /^(spring|summer|fall|winter|\(|\[|-|,)/i.test(remainder)) {
-        return root.assignmentUtils.normalizeText([prefix, remainder].filter(Boolean).join(" "));
-      }
-    }
-
-    return normalized;
-  }
-
-  function stripAcademicTerms(value) {
-    return root.assignmentUtils.normalizeText(String(value || "").replace(ACADEMIC_TERM_PATTERN, ""));
-  }
-
   function formatCourseName(courseName) {
-    const normalized = collapseRepeatedPrefix(root.assignmentUtils.cleanLabel(courseName));
-    const withoutTerm = stripAcademicTerms(normalized);
-
-    return withoutTerm || normalized;
+    return root.assignmentCourseResolver.normalizeCourseName(courseName);
   }
 
-  function buildDisplayTitle(title, courseName) {
-    const cleanTitle = root.assignmentUtils.cleanLabel(title);
+  function buildDisplayTitle(primaryTitle, courseName) {
+    const cleanTitle = root.assignmentUtils.cleanLabel(primaryTitle);
     const cleanCourseName = formatCourseName(courseName);
 
     if (!cleanTitle) {
@@ -121,7 +89,7 @@
       return cleanTitle;
     }
 
-    if (cleanTitle.toLowerCase().includes(cleanCourseName.toLowerCase())) {
+    if (cleanTitle.toLowerCase() === cleanCourseName.toLowerCase()) {
       return cleanTitle;
     }
 

@@ -38,6 +38,24 @@
           document.documentElement.classList.contains("blank-canvas--phase-agenda-list") &&
           document.querySelector(`#${root.dashboardStyles ? root.dashboardStyles.WIDGET_ID : "blank-canvas-dashboard-todo"}[data-layout-variant='agenda']`)
         )
+      },
+      {
+        id: "dashboard-assignment-hierarchy",
+        label: "Dashboard assignment hierarchy",
+        mounted: Boolean(
+          document.documentElement.classList.contains("blank-canvas--phase-assignment-hierarchy") &&
+          document.querySelector(
+            `#${root.dashboardStyles ? root.dashboardStyles.WIDGET_ID : "blank-canvas-dashboard-todo"}[data-row-variant='hierarchy']`
+          )
+        )
+      },
+      {
+        id: "custom-assignment-modal",
+        label: "Custom assignment modal",
+        mounted: Boolean(
+          root.customAssignmentModal &&
+            root.customAssignmentModal.getSnapshot().mounted
+        )
       }
     ];
 
@@ -60,6 +78,9 @@
           status: "idle"
         };
     const dashboardTodo = root.dashboard ? root.dashboard.getSnapshot() : null;
+    const customAssignmentModal = root.customAssignmentModal
+      ? root.customAssignmentModal.getSnapshot()
+      : null;
     const cssRules = root.ruleEngine.getApplicableCssRules(settings, context).map((rule) => {
       const selectors = root.ruleEngine.resolveSelectors(rule, settings, context);
       const matches = root.utils.safeQueryAll(selectors);
@@ -103,7 +124,17 @@
       pendingAssignmentsLastLoadedAt: pendingAssignments.lastLoadedAt || 0,
       pendingAssignmentsSource: pendingAssignments.source,
       pendingAssignmentsStatus: pendingAssignments.status,
+      pendingAssignmentsCombinedCount: pendingAssignments.items.length,
+      pendingAssignmentsCustomCount: pendingAssignments.items.filter((item) => item.source === "custom").length,
+      pendingAssignmentsSourceCounts: pendingAssignments.sourceCounts || {},
+      pendingAssignmentsFallbackCourseCount: pendingAssignments.items.filter((item) =>
+        item.isFallbackCourseName
+      ).length,
+      pendingAssignmentsNormalizedTitleCount: pendingAssignments.items.filter((item) =>
+        item.titleWasNormalized
+      ).length,
       dashboardTodo,
+      customAssignmentModal,
       rules: [...cssRules, ...domRules],
       logEntries: root.debug.snapshot(),
       generatedAt: new Date().toISOString()

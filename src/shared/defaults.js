@@ -8,7 +8,7 @@
     uiPhaseDashboardShell: true,
     uiPhaseLeftRailSimplification: true,
     uiPhaseAgendaList: true,
-    uiPhaseAssignmentHierarchy: false,
+    uiPhaseAssignmentHierarchy: true,
     uiPhaseTodayStrip: false,
     uiPhaseFocusedPages: false,
     uiPhaseMobilePolish: false,

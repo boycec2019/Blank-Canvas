@@ -54,34 +54,59 @@
     <script src="../src/shared/ui.js"></script>
     <script src="../src/shared/debug.js"></script>
     <script>
-      globalThis.chrome = globalThis.chrome || {
-        storage: {
-          sync: {
-            get: async (defaults) => defaults,
-            set: async () => undefined
-          },
-          onChanged: {
-            addListener: () => undefined,
-            removeListener: () => undefined
-          }
+      const __blankCanvasTestStore = {};
+      const __blankCanvasStorageListeners = new Set();
+
+      globalThis.chrome = globalThis.chrome || {};
+      globalThis.chrome.storage = globalThis.chrome.storage || {};
+      globalThis.chrome.storage.sync = {
+        get: async (defaults) => ({
+          ...(defaults || {}),
+          ...__blankCanvasTestStore
+        }),
+        set: async (values) => {
+          const changes = {};
+          Object.entries(values || {}).forEach(([key, value]) => {
+            changes[key] = {
+              oldValue: __blankCanvasTestStore[key],
+              newValue: value
+            };
+            __blankCanvasTestStore[key] = value;
+          });
+          __blankCanvasStorageListeners.forEach((listener) => listener(changes, "sync"));
         }
       };
+      globalThis.chrome.storage.onChanged = {
+        addListener: (listener) => __blankCanvasStorageListeners.add(listener),
+        removeListener: (listener) => __blankCanvasStorageListeners.delete(listener)
+      };
+      globalThis.chrome.runtime = globalThis.chrome.runtime || {};
     </script>
     <script src="../src/shared/course-nav-utils.js"></script>
     <script src="../src/shared/storage.js"></script>
+    <script src="../src/shared/custom-assignments.js"></script>
+    <script src="../src/shared/custom-assignment-form.js"></script>
     <script src="../src/content/global-nav.js"></script>
     <script src="../src/content/selectors.js"></script>
     <script src="../src/content/dashboard-header.js"></script>
     <script src="../src/content/assignment-utils.js"></script>
+    <script src="../src/content/assignment-course-resolver.js"></script>
     <script src="../src/content/assignment-display.js"></script>
+    <script src="../src/content/assignment-row-model.js"></script>
     <script src="../src/content/assignment-formatters.js"></script>
     <script src="../src/content/assignment-dom.js"></script>
     <script src="../src/content/assignment-api.js"></script>
     <script src="../src/content/assignment-store-state.js"></script>
+    <script src="../src/content/assignment-refresh.js"></script>
     <script src="../src/content/assignments.js"></script>
     <script src="../src/content/rules.js"></script>
     <script src="../src/content/course-nav.js"></script>
     <script src="../src/content/bootstrap.js"></script>
+    <script src="../src/content/dashboard-widget-actions.js"></script>
+    <script src="../src/content/dashboard-row-renderer.js"></script>
+    <script src="../src/content/custom-assignment-schedule.js"></script>
+    <script src="../src/content/custom-assignment-modal-styles.js"></script>
+    <script src="../src/content/custom-assignment-modal.js"></script>
     <script src="../src/content/dashboard-styles.js"></script>
     <script src="../src/content/dashboard-view.js"></script>
     <script src="../src/content/theme-styles.js"></script>
