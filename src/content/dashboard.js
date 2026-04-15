@@ -4,12 +4,7 @@
   function renderPendingAssignmentsWidget(settings, assignmentSnapshot) {
     const context = root.canvas.getPageContext();
     if (!settings.enabled || !settings.showDashboardTodoList || !context.isDashboard) {
-      if (root.customAssignmentModal) {
-        root.customAssignmentModal.sync({
-          enabled: false
-        });
-      }
-      root.dashboardView.teardown();
+      root.dashboard.teardown();
       return {
         rendered: false,
         itemCount: 0,
@@ -19,12 +14,7 @@
 
     const mount = root.canvas.findDashboardTodoMount();
     if (!mount || !mount.container) {
-      if (root.customAssignmentModal) {
-        root.customAssignmentModal.sync({
-          enabled: false
-        });
-      }
-      root.dashboardView.teardown();
+      root.dashboard.teardown();
       return {
         rendered: false,
         itemCount: 0,
@@ -32,23 +22,28 @@
       };
     }
 
-    const widget =
-      document.getElementById(root.dashboardStyles.WIDGET_ID) || root.dashboardView.createWidget();
-    root.dashboardView.ensureWidgetPlacement(widget, mount);
-    const presentation = root.dashboardView.syncPresentationState(widget, settings);
-    root.dashboardView.renderItems(widget, assignmentSnapshot);
-    if (root.customAssignmentModal) {
-      root.customAssignmentModal.sync({
-        enabled: true
-      });
-    }
+    const rowItems = root.assignmentRowModel.buildAssignmentRows(assignmentSnapshot.items || [], {
+      courseNames: root.assignmentUtils.buildCourseNameMap(document)
+    });
+    const layoutSnapshot = root.dashboardLayout.sync({
+      mount,
+      settings,
+      assignmentSnapshot,
+      rowItems
+    });
+    const widget = layoutSnapshot ? layoutSnapshot.assignments : null;
+    const presentation = root.dashboardView.getSnapshot(widget);
     const widgetSnapshot = root.dashboardView.getSnapshot();
+    const dashboardLayoutSnapshot = root.dashboardLayout ? root.dashboardLayout.getSnapshot() : null;
     const modalSnapshot = root.customAssignmentModal ? root.customAssignmentModal.getSnapshot() : null;
 
     return {
       rendered: true,
       itemCount: widgetSnapshot.itemCount,
       mountFound: true,
+      sections: dashboardLayoutSnapshot ? dashboardLayoutSnapshot.sections : [],
+      assignmentsMounted: dashboardLayoutSnapshot ? dashboardLayoutSnapshot.assignmentsMounted : false,
+      classesAnchorFound: dashboardLayoutSnapshot ? dashboardLayoutSnapshot.classesAnchorFound : false,
       layoutVariant: presentation.layoutVariant,
       rowVariant: presentation.rowVariant,
       fallbackCourseCount: widgetSnapshot.fallbackCourseCount,
@@ -65,9 +60,25 @@
   }
 
   root.dashboard = {
-    getSnapshot: root.dashboardView.getSnapshot,
+    getSnapshot() {
+      const layoutSnapshot = root.dashboardLayout ? root.dashboardLayout.getSnapshot() : null;
+      const widgetSnapshot = root.dashboardView ? root.dashboardView.getSnapshot() : null;
+
+      return {
+        ...(widgetSnapshot || {}),
+        sections: layoutSnapshot ? layoutSnapshot.sections : [],
+        assignmentsMounted: layoutSnapshot ? layoutSnapshot.assignmentsMounted : false,
+        classesAnchorFound: layoutSnapshot ? layoutSnapshot.classesAnchorFound : false
+      };
+    },
     getStyles: root.dashboardStyles.getStyles,
     renderPendingAssignmentsWidget,
-    teardown: root.dashboardView.teardown
+    teardown() {
+      if (root.dashboardLayout) {
+        root.dashboardLayout.teardown();
+      } else {
+        root.dashboardView.teardown();
+      }
+    }
   };
 })();

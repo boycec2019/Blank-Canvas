@@ -31,26 +31,22 @@
         position: relative;
         width: min(520px, calc(100vw - 32px));
         margin: min(8vh, 64px) auto 0;
-        padding: 28px;
+        padding: 24px;
         max-height: calc(100vh - 32px);
-        overflow-y: auto;
+        overflow: visible;
         border-radius: 28px;
         border: 1px solid var(--blank-canvas-border-subtle);
-        background: linear-gradient(
-          180deg,
-          var(--blank-canvas-color-surface-elevated) 0%,
-          var(--blank-canvas-color-surface) 100%
-        );
+        background: var(--blank-canvas-color-surface-elevated);
         box-shadow: 0 24px 60px rgba(32, 27, 21, 0.18);
         color: var(--blank-canvas-color-text);
       }
 
       #${modalId} .blank-canvas__custom-modal-header {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 16px;
-        margin-bottom: 18px;
+        margin-bottom: 14px;
       }
 
       #${modalId} .blank-canvas__custom-modal-eyebrow {
@@ -65,8 +61,10 @@
       #${modalId} h3 {
         margin: 0;
         font-family: var(--blank-canvas-font-body);
-        font-size: 1.15rem;
-        line-height: 1.2;
+        font-size: 1.24rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
       }
 
       #${modalId} .blank-canvas__custom-modal-close,
@@ -74,16 +72,38 @@
         border: 1px solid var(--blank-canvas-border-subtle);
         background: rgba(255, 255, 255, 0.72);
         color: var(--blank-canvas-color-text);
+        border-radius: 18px;
+      }
+
+      #${modalId} .blank-canvas__custom-modal-close,
+      #${modalId} .blank-canvas__custom-modal-cancel,
+      #${modalId} .blank-canvas__custom-modal-save {
+        min-height: 44px;
+        padding: 10px 16px;
+        font: inherit;
+        border-radius: 18px;
+      }
+
+      #${modalId} .blank-canvas__custom-modal-save {
+        border: 1px solid var(--blank-canvas-border-strong);
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--blank-canvas-color-text);
       }
 
       #${modalId} .blank-canvas__custom-modal-form {
         display: grid;
-        gap: 12px;
+        gap: 10px;
       }
 
       #${modalId} .blank-canvas__custom-modal-field strong,
       #${modalId} .blank-canvas__custom-modal-field span {
         display: block;
+      }
+
+      #${modalId} .blank-canvas__custom-modal-field strong {
+        font-size: 0.92rem;
+        font-weight: 700;
+        line-height: 1.2;
       }
 
       #${modalId} .blank-canvas__custom-modal-field span {
@@ -101,10 +121,15 @@
         min-height: 54px;
         padding: 13px 16px;
         font: inherit;
+        font-size: 0.96rem;
         line-height: 1.25;
         color: var(--blank-canvas-color-text);
         background: rgba(255, 255, 255, 0.82);
         transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+      }
+
+      #${modalId} input[type='text']::placeholder {
+        color: rgba(48, 40, 31, 0.42);
       }
 
       #${modalId} select:focus,
@@ -121,15 +146,64 @@
         appearance: none;
         -webkit-appearance: none;
         -moz-appearance: none;
-        padding-right: 56px;
-        background-image:
-          linear-gradient(45deg, transparent 50%, currentColor 50%),
-          linear-gradient(135deg, currentColor 50%, transparent 50%);
-        background-position:
-          calc(100% - 24px) calc(50% - 3px),
-          calc(100% - 16px) calc(50% - 3px);
-        background-size: 8px 8px, 8px 8px;
+        padding-right: 28px;
+        background-image: none;
         background-repeat: no-repeat;
+      }
+
+      #${modalId} .blank-canvas__custom-modal-select-wrap {
+        position: relative;
+        display: block;
+      }
+
+      #${modalId} .blank-canvas__custom-modal-select-wrap select {
+        padding-right: 44px;
+      }
+
+      #${modalId} .blank-canvas__custom-modal-select-caret {
+        position: absolute;
+        top: 50%;
+        right: 17px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        color: var(--blank-canvas-color-muted);
+        pointer-events: none;
+        transform: translateY(-50%);
+      }
+
+      #${modalId} .blank-canvas__custom-modal-select-caret::before {
+        content: "";
+        display: block;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid currentColor;
+        transform: translateY(-3px);
+      }
+
+      #${modalId} .blank-canvas__custom-modal-meridiem {
+        background-image:
+          linear-gradient(45deg, transparent 50%, rgb(109, 101, 93) 50%),
+          linear-gradient(135deg, rgb(109, 101, 93) 50%, transparent 50%);
+        background-position:
+          calc(100% - 14px) 50%,
+          calc(100% - 10px) 50%;
+        background-size: 6px 6px, 6px 6px;
+        background-repeat: no-repeat;
+      }
+
+      #${modalId} select:required:invalid {
+        color: rgba(48, 40, 31, 0.42);
+      }
+
+      #${modalId}-course[data-placeholder='true'] {
+        color: rgba(48, 40, 31, 0.42) !important;
+      }
+
+      #${modalId} select option {
+        color: var(--blank-canvas-color-text);
       }
 
       #${modalId} .blank-canvas__custom-modal-hint {
@@ -141,6 +215,11 @@
       #${modalId} .blank-canvas__custom-modal-schedule {
         position: relative;
         gap: 10px;
+      }
+
+      #${modalId} .blank-canvas__custom-modal-schedule-body {
+        position: relative;
+        margin-top: 10px;
       }
 
       #${modalId} .blank-canvas__custom-modal-schedule-row {
@@ -171,10 +250,16 @@
         min-width: 0;
       }
 
-      #${modalId} .blank-canvas__custom-modal-date-label {
-        font-size: 0.98rem;
-        font-weight: 600;
-        line-height: 1.1;
+      #${modalId} .blank-canvas__custom-modal-date-trigger .blank-canvas__custom-modal-date-label {
+        color: var(--blank-canvas-color-text);
+        font-size: 0.96rem;
+        font-weight: 400;
+        line-height: 1.25;
+      }
+
+      #${modalId} .blank-canvas__custom-modal-date-trigger[data-placeholder='true']
+        .blank-canvas__custom-modal-date-label {
+        color: rgba(48, 40, 31, 0.42);
       }
 
       #${modalId} .blank-canvas__custom-modal-date-meta {
@@ -183,32 +268,47 @@
 
       #${modalId} .blank-canvas__custom-modal-date-icon {
         flex: 0 0 auto;
-        color: var(--blank-canvas-color-muted);
-        font-size: 0.88rem;
-        line-height: 1;
+        width: 14px;
+        height: 14px;
+        color: rgb(109, 101, 93);
+        font-size: 0;
+        line-height: 0;
+        background-image:
+          linear-gradient(45deg, transparent 50%, currentColor 50%),
+          linear-gradient(135deg, currentColor 50%, transparent 50%);
+        background-position:
+          calc(50% - 2px) 50%,
+          calc(50% + 2px) 50%;
+        background-size: 6px 6px, 6px 6px;
+        background-repeat: no-repeat;
       }
 
       #${modalId} .blank-canvas__custom-modal-calendar {
-        margin-top: 10px;
-        padding: 12px;
-        border-radius: 20px;
-        background: #07111f;
-        color: #f3f5f8;
-        box-shadow: 0 18px 36px rgba(9, 16, 28, 0.28);
-        max-width: 100%;
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        z-index: 2;
+        width: min(312px, 100%);
+        box-sizing: border-box;
+        padding: 10px;
+        border: 1px solid rgba(48, 40, 31, 0.1);
+        border-radius: 18px;
+        background: #ffffff;
+        color: var(--blank-canvas-color-text);
+        box-shadow: 0 16px 38px rgba(32, 27, 21, 0.16);
       }
 
       #${modalId} .blank-canvas__custom-modal-calendar-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
-        margin-bottom: 12px;
+        gap: 6px;
+        margin-bottom: 8px;
       }
 
       #${modalId} .blank-canvas__custom-modal-calendar-month {
         margin: 0;
-        font-size: 1rem;
+        font-size: 0.9rem;
         font-weight: 700;
       }
 
@@ -216,13 +316,13 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border: none;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.04);
-        color: #f3f5f8 !important;
-        font-size: 1.15rem;
+        background: rgba(48, 40, 31, 0.04);
+        color: var(--blank-canvas-color-text) !important;
+        font-size: 1rem;
         line-height: 1;
         opacity: 1;
         text-shadow: none;
@@ -232,13 +332,14 @@
       #${modalId} .blank-canvas__custom-modal-calendar-days {
         display: grid;
         grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 4px;
+        gap: 2px;
       }
 
       #${modalId} .blank-canvas__custom-modal-calendar-weekdays {
-        margin-bottom: 10px;
-        color: rgba(243, 245, 248, 0.72);
-        font-size: 0.76rem;
+        margin-bottom: 6px;
+        color: var(--blank-canvas-color-muted);
+        font-size: 0.68rem;
+        font-weight: 600;
         text-align: center;
       }
 
@@ -248,14 +349,14 @@
         justify-content: center;
         width: 100%;
         aspect-ratio: 1 / 1;
-        min-height: 30px;
+        min-height: 28px;
         border: none;
         border-radius: 999px;
         background: transparent;
-        color: #f3f5f8 !important;
+        color: var(--blank-canvas-color-text) !important;
         font: inherit;
-        font-size: 0.9rem;
-        font-weight: 600;
+        font-size: 0.78rem;
+        font-weight: 500;
         line-height: 1;
         text-indent: 0;
         text-shadow: none;
@@ -264,20 +365,20 @@
       }
 
       #${modalId} .blank-canvas__custom-modal-day:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(53, 102, 93, 0.08);
       }
 
       #${modalId} .blank-canvas__custom-modal-day.is-selected {
-        background: rgba(255, 204, 102, 0.22);
-        color: #ffe8bd;
+        background: rgba(53, 102, 93, 0.14);
+        color: rgb(43, 84, 76) !important;
       }
 
       #${modalId} .blank-canvas__custom-modal-day.is-today {
-        box-shadow: inset 0 0 0 1px rgba(110, 227, 182, 0.5);
+        box-shadow: inset 0 0 0 1px rgba(53, 102, 93, 0.38);
       }
 
       #${modalId} .blank-canvas__custom-modal-day.is-outside-month {
-        color: rgba(243, 245, 248, 0.54) !important;
+        color: rgba(48, 40, 31, 0.36) !important;
       }
 
       #${modalId} .blank-canvas__custom-modal-time-field {
@@ -294,10 +395,12 @@
       }
 
       #${modalId} .blank-canvas__custom-modal-time-field input[type='text'] {
-        min-height: 56px;
+        min-height: 54px;
+        color: var(--blank-canvas-color-text);
         text-align: center;
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: 0.96rem;
+        font-weight: 400;
+        line-height: 1.25;
         padding: 12px 10px;
       }
 
@@ -307,7 +410,7 @@
         -moz-appearance: none;
         display: inline-flex;
         align-items: center;
-        min-height: 56px;
+        min-height: 54px;
         min-width: 92px;
         border: 1px solid rgba(48, 40, 31, 0.12);
         border-radius: 18px;
@@ -315,15 +418,18 @@
         align-self: stretch;
         color: var(--blank-canvas-color-text);
         font: inherit;
-        font-size: 0.92rem;
-        font-weight: 500;
-        padding: 0 28px 0 12px;
+        font-size: 0.96rem;
+        font-weight: 400;
+        line-height: 1.25;
+        padding: 0 29px 0 20px;
+        text-align: left;
+        text-align-last: left;
         background-image:
-          linear-gradient(45deg, transparent 50%, currentColor 50%),
-          linear-gradient(135deg, currentColor 50%, transparent 50%);
+          linear-gradient(45deg, transparent 50%, rgb(109, 101, 93) 50%),
+          linear-gradient(135deg, rgb(109, 101, 93) 50%, transparent 50%);
         background-position:
-          calc(100% - 14px) calc(50% - 3px),
-          calc(100% - 10px) calc(50% - 3px);
+          calc(100% - 14px) 50%,
+          calc(100% - 10px) 50%;
         background-size: 6px 6px, 6px 6px;
         background-repeat: no-repeat;
       }
@@ -336,7 +442,7 @@
         position: relative;
         display: block;
         align-self: stretch;
-        height: 56px;
+        height: 54px;
         width: 18px;
         color: var(--blank-canvas-color-muted);
         font-size: 0;
@@ -350,14 +456,14 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        font-size: 1.08rem;
-        font-weight: 700;
+        font-size: 0.96rem;
+        font-weight: 400;
         line-height: 1;
         transform: translate(-50%, -50%);
       }
 
       #${modalId} .blank-canvas__custom-modal-error {
-        min-height: 1em;
+        min-height: 0;
         margin: 0;
         color: var(--blank-canvas-color-danger);
         font-size: 0.82rem;
@@ -366,7 +472,7 @@
       #${modalId} .blank-canvas__custom-modal-actions {
         display: flex;
         gap: 10px;
-        margin-top: 6px;
+        margin-top: 0;
       }
 
       #${modalId} .blank-canvas__custom-modal-actions button {
@@ -377,7 +483,7 @@
         #${modalId} .blank-canvas__custom-modal-dialog {
           width: calc(100vw - 20px);
           margin-top: 8px;
-          padding: 22px;
+          padding: 20px;
           max-height: calc(100vh - 16px);
         }
 

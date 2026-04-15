@@ -2,6 +2,10 @@
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
 
   function buildStatusLabel(item) {
+    if (item && item.completedAt) {
+      return "Done";
+    }
+
     const dueLabel = root.assignmentUtils.cleanLabel(item && item.dueLabel);
     const statusTone = item && item.statusTone;
 
@@ -41,7 +45,9 @@
       sourceItem.title,
       resolvedCourse.courseName
     );
-    const statusTone = sourceItem.statusTone || root.assignmentDisplay.getStatusTone(sourceItem.dueLabel);
+    const statusTone = sourceItem.completedAt
+      ? "done"
+      : sourceItem.statusTone || root.assignmentDisplay.getStatusTone(sourceItem.dueLabel);
     const statusLabel = buildStatusLabel({
       ...sourceItem,
       statusTone

@@ -28,6 +28,7 @@
         "src/shared/course-nav-utils.js",
         "src/shared/custom-assignments.js",
         "src/shared/custom-assignment-form.js",
+        "src/shared/ignored-assignments.js",
         "src/content/bootstrap.js"
       ],
       "run_at": "document_start"
@@ -46,6 +47,7 @@
         "src/shared/storage.js",
         "src/shared/custom-assignments.js",
         "src/shared/custom-assignment-form.js",
+        "src/shared/ignored-assignments.js",
         "src/content/global-nav.js",
         "src/content/selectors.js",
         "src/content/dashboard-header.js",
@@ -61,6 +63,9 @@
         "src/content/assignments.js",
         "src/content/rules.js",
         "src/content/course-nav.js",
+        "src/content/feature-registry.js",
+        "src/content/focused-pages.js",
+        "src/content/ui-primitives.js",
         "src/content/diagnostics.js",
         "src/content/dashboard-widget-actions.js",
         "src/content/dashboard-row-renderer.js",
@@ -69,7 +74,9 @@
         "src/content/custom-assignment-modal.js",
         "src/content/dashboard-styles.js",
         "src/content/dashboard-view.js",
+        "src/content/dashboard-layout.js",
         "src/content/dashboard.js",
+        "src/content/feature-definitions.js",
         "src/content/theme-styles.js",
         "src/content/renderer.js",
         "src/content/main.js"

@@ -78,9 +78,11 @@
           status: "idle"
         };
     const dashboardTodo = root.dashboard ? root.dashboard.getSnapshot() : null;
+    const dashboardLayout = root.dashboardLayout ? root.dashboardLayout.getSnapshot() : null;
     const customAssignmentModal = root.customAssignmentModal
       ? root.customAssignmentModal.getSnapshot()
       : null;
+    const featureRegistry = root.featureRegistry ? root.featureRegistry.getSnapshot() : null;
     const cssRules = root.ruleEngine.getApplicableCssRules(settings, context).map((rule) => {
       const selectors = root.ruleEngine.resolveSelectors(rule, settings, context);
       const matches = root.utils.safeQueryAll(selectors);
@@ -109,6 +111,9 @@
     return {
       url: window.location.href,
       pagePath: context.path,
+      pageType: context.pageType,
+      pageFamily: context.pageFamily,
+      pageRoutePattern: context.pageRoutePattern,
       globalNavKey: context.globalNavKey,
       isCanvasLike: root.canvas.isCanvasLikePage(),
       previewMode: Boolean(settings.previewMode),
@@ -133,8 +138,12 @@
       pendingAssignmentsNormalizedTitleCount: pendingAssignments.items.filter((item) =>
         item.titleWasNormalized
       ).length,
+      dashboardLayout,
       dashboardTodo,
       customAssignmentModal,
+      mountedFeatureIds: featureRegistry ? featureRegistry.mountedFeatureIds : [],
+      registeredFeatureIds: featureRegistry ? featureRegistry.registeredFeatureIds : [],
+      featureSnapshots: featureRegistry ? featureRegistry.featureSnapshots : {},
       rules: [...cssRules, ...domRules],
       logEntries: root.debug.snapshot(),
       generatedAt: new Date().toISOString()

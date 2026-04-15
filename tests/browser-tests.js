@@ -88,6 +88,12 @@
     });
   }
 
+  async function resetIgnoredAssignments() {
+    await chrome.storage.sync.set({
+      ignoredAssignmentKeys: []
+    });
+  }
+
   function renderResults(results) {
     const passed = results.filter((result) => result.ok).length;
     const failed = results.length - passed;
@@ -106,6 +112,285 @@
       resultsList.appendChild(item);
     });
   }
+
+  addTest("Canvas page context resolves stable page types", () => {
+    const cases = [
+      ["/", "dashboard", "dashboard", "/dashboard"],
+      ["/dashboard", "dashboard", "dashboard", "/dashboard"],
+      ["/courses/101", "course-home", "course", "/courses/:courseId"],
+      ["/courses/101/assignments", "course-assignments", "course", "/courses/:courseId/assignments"],
+      ["/courses/101/assignments/7", "course-assignment-detail", "course", "/courses/:courseId/assignments/:assignmentId"],
+      ["/courses/101/assignments/7/submissions", "course-assignment-detail", "course", "/courses/:courseId/assignments/:assignmentId"],
+      ["/courses/101/modules", "course-modules", "course", "/courses/:courseId/modules"],
+      ["/courses/101/modules/items/9", "course-modules", "course", "/courses/:courseId/modules"],
+      ["/calendar", "calendar", "calendar", "/calendar"],
+      ["/conversations", "inbox", "communication", "/conversations"],
+      ["/accounts", "unknown-canvas", "unknown", ""]
+    ];
+
+    cases.forEach(([path, pageType, pageFamily, routePattern]) => {
+      const courseId = root.courseNavUtils.getCourseIdFromPath(path);
+      const match = root.canvas.getPageMatch(path, courseId);
+      equal(match.pageType, pageType, `${path} should map to the expected page type.`);
+      equal(match.pageFamily, pageFamily, `${path} should map to the expected page family.`);
+      equal(match.routePattern, routePattern, `${path} should expose the expected route pattern.`);
+    });
+  });
+
+  addTest("Phase 6.5 is registered as a disabled roadmap phase flag", () => {
+    const phase = root.ui.getPhaseDefinitions().find((item) => item.id === "uiPhaseDashboardUiOverhaul");
+
+    assert(phase, "The dashboard UI overhaul phase should be registered.");
+    equal(phase.label, "Phase 6.5: Dashboard UI overhaul", "Phase 6.5 should have the expected label.");
+    equal(root.defaults.uiPhaseDashboardUiOverhaul, false, "Phase 6.5 should default to disabled.");
+    equal(
+      root.ui.normalizePhaseFlags({}).uiPhaseDashboardUiOverhaul,
+      false,
+      "Phase normalization should preserve the disabled Phase 6.5 default."
+    );
+  });
+
+  addTest("Feature registry exposes page-scoped feature enablement", () => {
+    const definitions = root.featureRegistry.getDefinitions();
+    const dashboardFeature = definitions.find((feature) => feature.id === "dashboard-assignments");
+    const focusedPageFeature = definitions.find((feature) => feature.id === "focused-page-shell");
+    const settings = {
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      showDashboardTodoList: true,
+      uiPhaseFocusedPages: true
+    };
+
+    assert(dashboardFeature, "The dashboard assignments feature should be registered.");
+    assert(focusedPageFeature, "The focused page shell feature should be registered.");
+    assert(
+      dashboardFeature.isEnabled(settings, { pageType: "dashboard" }),
+      "Dashboard assignments should be eligible on the dashboard."
+    );
+    assert(
+      !dashboardFeature.isEnabled(settings, { pageType: "course-home" }),
+      "Dashboard assignments should not be eligible on course pages."
+    );
+    assert(
+      focusedPageFeature.isEnabled(settings, {
+        pageType: "course-assignment-detail",
+        pageFamily: "course",
+        courseId: "101",
+        pageRoutePattern: "/courses/:courseId/assignments/:assignmentId"
+      }),
+      "The focused page shell should be eligible on focused course pages when Phase 7 is enabled."
+    );
+  });
+
+  addTest("Feature registry replaces duplicate feature ids without duplicating styles", () => {
+    const registry = root.featureRegistry.createRegistry();
+    let oldTeardownCount = 0;
+
+    registry.register({
+      id: "demo-feature",
+      isEnabled: () => true,
+      mount: () => ({
+        version: "old"
+      }),
+      teardown: () => {
+        oldTeardownCount += 1;
+      },
+      getStyles: () => ".old-demo-feature {}"
+    });
+
+    registry.sync({
+      settings: {
+        enabled: true
+      },
+      context: {
+        pageType: "dashboard"
+      }
+    });
+
+    registry.register({
+      id: "demo-feature",
+      isEnabled: () => true,
+      mount: () => ({
+        version: "new"
+      }),
+      getStyles: () => ".new-demo-feature {}"
+    });
+
+    const definitions = registry.getDefinitions();
+    const styles = registry.getStyles({});
+    const replacementSnapshot = registry.getSnapshot();
+    const report = registry.sync({
+      settings: {
+        enabled: true
+      },
+      context: {
+        pageType: "dashboard"
+      }
+    });
+
+    equal(definitions.length, 1, "Duplicate feature ids should replace the previous feature.");
+    equal(oldTeardownCount, 1, "Replacing a mounted feature should teardown the old definition.");
+    equal(
+      replacementSnapshot.featureSnapshots["demo-feature"].replaced,
+      true,
+      "Replacing a mounted feature should update diagnostics before the next sync."
+    );
+    assert(!styles.includes(".old-demo-feature"), "Replaced feature styles should not remain registered.");
+    assert(styles.includes(".new-demo-feature"), "The replacement feature styles should be registered.");
+    equal(
+      report.featureSnapshots["demo-feature"].version,
+      "new",
+      "The replacement feature should own the next mount."
+    );
+  });
+
+  addTest("Feature registry tears down only features that were previously mounted", () => {
+    const registry = root.featureRegistry.createRegistry();
+    let mountCount = 0;
+    let teardownCount = 0;
+    let featureEnabled = true;
+
+    registry.register({
+      id: "lifecycle-feature",
+      isEnabled: () => featureEnabled,
+      mount: () => {
+        mountCount += 1;
+        return {
+          mountCount
+        };
+      },
+      teardown: () => {
+        teardownCount += 1;
+      }
+    });
+
+    registry.sync({
+      settings: {
+        enabled: true
+      },
+      context: {
+        pageType: "dashboard"
+      }
+    });
+    featureEnabled = false;
+    registry.sync({
+      settings: {
+        enabled: true
+      },
+      context: {
+        pageType: "course-home"
+      }
+    });
+    registry.sync({
+      settings: {
+        enabled: true
+      },
+      context: {
+        pageType: "course-home"
+      }
+    });
+    featureEnabled = true;
+    registry.sync({
+      settings: {
+        enabled: true
+      },
+      context: {
+        pageType: "dashboard"
+      }
+    });
+    registry.teardown();
+    registry.teardown();
+
+    equal(mountCount, 2, "The feature should mount once per enabled sync after remount.");
+    equal(teardownCount, 2, "Teardown should run once per mounted lifecycle.");
+  });
+
+  addTest("Focused page shell mounts diagnostics without visual changes", () => {
+    const settings = {
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseFocusedPages: true
+    };
+    const context = {
+      path: "/courses/101/assignments/7",
+      pageType: "course-assignment-detail",
+      pageFamily: "course",
+      pageRoutePattern: "/courses/:courseId/assignments/:assignmentId",
+      isDashboard: false,
+      isCourse: true,
+      courseId: "101",
+      globalNavKey: "courses"
+    };
+
+    try {
+      const report = root.featureRegistry.sync({
+        settings,
+        context,
+        assignmentSnapshot: {
+          items: [],
+          status: "idle",
+          source: "none"
+        }
+      });
+
+      assert(
+        report.mountedFeatureIds.includes("focused-page-shell"),
+        "The Phase 7 shell should mount as a diagnostic-only feature."
+      );
+      equal(
+        report.featureSnapshots["focused-page-shell"].visualChangesEnabled,
+        false,
+        "The Phase 7 shell should not enable visible page changes during the refactor."
+      );
+    } finally {
+      root.featureRegistry.teardown();
+    }
+  });
+
+  addTest("Shared UI primitive styles are included in managed CSS", () => {
+    const cssText = root.themeStyles.buildBaseCss({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial"
+    });
+
+    assert(cssText.includes(".blank-canvas-ui-surface"), "Managed CSS should include shared surface primitives.");
+    assert(cssText.includes(".blank-canvas-ui-popover"), "Managed CSS should include shared popover primitives.");
+  });
+
+  addTest("Diagnostics expose page context and feature registry state", () => {
+    const originalGetPageContext = root.canvas.getPageContext;
+    root.canvas.getPageContext = () => ({
+      path: "/courses/101/modules",
+      pageType: "course-modules",
+      pageFamily: "course",
+      pageRoutePattern: "/courses/:courseId/modules",
+      isDashboard: false,
+      isCourse: true,
+      courseId: "101",
+      globalNavKey: "courses"
+    });
+
+    try {
+      const report = root.diagnostics.buildReport({
+        ...root.defaults,
+        enabled: true,
+        uiLayoutMode: "editorial"
+      });
+
+      equal(report.pageType, "course-modules", "Diagnostics should include the stable page type.");
+      equal(report.pageFamily, "course", "Diagnostics should include the page family.");
+      assert(
+        report.registeredFeatureIds.includes("dashboard-assignments"),
+        "Diagnostics should include registered feature ids."
+      );
+      assert(Array.isArray(report.mountedFeatureIds), "Diagnostics should expose mounted feature ids.");
+    } finally {
+      root.canvas.getPageContext = originalGetPageContext;
+    }
+  });
 
   addTest("Formats exact due dates and times", () => {
     const item = root.assignmentFormatting.decoratePendingAssignment(
@@ -391,6 +676,21 @@
 
     equal(updated.title, "Read chapter 6", "Updated custom assignments should persist new titles.");
 
+    const completed = await root.customAssignments.toggleCustomAssignmentDone(created.id, {
+      now: new Date("2026-04-13T12:30:00Z")
+    });
+    assert(completed.completedAt, "Completed custom assignments should record a completion timestamp.");
+    equal(
+      (await root.customAssignments.listPendingAssignments()).length,
+      1,
+      "Completed custom assignments should remain visible in pending assignment surfaces."
+    );
+
+    const reopened = await root.customAssignments.toggleCustomAssignmentDone(created.id, {
+      now: new Date("2026-04-13T13:30:00Z")
+    });
+    equal(reopened.completedAt, null, "Toggling completion again should clear the completed state.");
+
     const beforeDelete = await root.customAssignments.listCustomAssignments();
     equal(beforeDelete.length, 1, "Custom assignments should be persisted in storage.");
 
@@ -407,8 +707,9 @@
       }
     ]);
 
-    equal(options[0].courseId, "general", "General should be the first available popup course option.");
-    equal(options[1].courseName, "English 101", "Discovered course options should be preserved.");
+    equal(options[0].courseName, "English 101", "Discovered course options should appear before the fallback option.");
+    equal(options[1].courseId, "general", "The fallback option should remain bound to the general course id.");
+    equal(options[1].courseName, "Other", "The custom-assignment picker should label the fallback course as Other.");
     equal(
       root.customAssignmentForm.validateDraft({
         title: "",
@@ -453,6 +754,7 @@
     equal(draft.courseId, "101", "Existing records should preserve their course selection in draft form.");
     equal(draft.dueDate, "2026-04-20", "Drafts should prefill the custom date picker with a local date.");
     equal(draft.dueTime, "10:00 AM", "Drafts should prefill the typed time control in local time.");
+    equal(root.customAssignmentForm.createDraft().courseId, "", "New custom drafts should start with no class selected.");
     equal(
       root.customAssignmentForm.createDraft().dueTime,
       root.customAssignmentForm.DEFAULT_DUE_TIME,
@@ -464,6 +766,7 @@
     const originalDom = root.assignmentDom.scrapePendingAssignmentsFromDom;
     const originalApi = root.assignmentApi.fetchPendingAssignmentsFromApi;
     await resetCustomAssignments();
+    await resetIgnoredAssignments();
 
     root.assignmentDom.scrapePendingAssignmentsFromDom = () => [];
     root.assignmentApi.fetchPendingAssignmentsFromApi = async () => [
@@ -510,6 +813,40 @@
     root.assignmentDom.scrapePendingAssignmentsFromDom = originalDom;
     root.assignmentApi.fetchPendingAssignmentsFromApi = originalApi;
     await resetCustomAssignments();
+    await resetIgnoredAssignments();
+  });
+
+  addTest("Ignored Canvas assignment keys filter native assignments out of merged results", async () => {
+    await resetIgnoredAssignments();
+
+    const items = [
+      {
+        title: "Canvas assignment",
+        courseId: "101",
+        courseName: "English 101",
+        dueAt: "2026-04-10T23:59:00Z",
+        url: "https://canvas.example.com/courses/101/assignments/7",
+        source: "api"
+      },
+      {
+        title: "Custom reading",
+        courseId: "general",
+        courseName: "General",
+        dueAt: "2026-04-11T10:00:00Z",
+        source: "custom",
+        customAssignmentId: "custom-1",
+        url: ""
+      }
+    ];
+
+    const ignoredKey = root.assignmentCourseResolver.getAssignmentKey(items[0]);
+    await root.ignoredAssignments.ignoreAssignmentKey(ignoredKey);
+    const filtered = root.assignmentRefresh.filterIgnoredAssignments(items, [ignoredKey]);
+
+    equal(filtered.length, 1, "Ignored native assignments should be filtered from merged lists.");
+    equal(filtered[0].source, "custom", "Custom assignments should remain visible when native items are ignored.");
+
+    await resetIgnoredAssignments();
   });
 
   addTest("Fetches planner items across pages and maps assignment fields", async () => {
@@ -1130,6 +1467,10 @@
             url: "https://canvas.example.com/courses/101/assignments/7"
           }
         ]
+      }, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true
       });
 
       equal(
@@ -1169,9 +1510,20 @@
       );
       equal(
         widget.querySelector(".blank-canvas__todo-create").textContent,
-        "New custom",
-        "The dashboard widget should expose the custom-assignment launcher."
+        "+",
+        "The dashboard widget should expose the compact custom-assignment launcher."
       );
+      /*
+      equal(
+        widget.querySelector(".blank-canvas__todo-summary-score").textContent,
+        "Busy 28 · Light",
+        "Phase 6 should render a compact busy score above the assignment list."
+      );
+      assert(
+        widget.querySelector(".blank-canvas__todo-share-toggle"),
+        "Phase 6 should render a share action in the summary strip."
+      );
+      */
     } finally {
       widget.remove();
     }
@@ -1211,20 +1563,135 @@
             url: "https://canvas.example.com/courses/101/assignments/7"
           }
         ]
+      }, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true
       });
 
       equal(
         widget.querySelectorAll(".blank-canvas__todo-item[data-source='custom'] .blank-canvas__todo-action").length,
-        2,
-        "Custom rows should expose edit and delete controls."
+        3,
+        "Custom rows should expose edit, delete, and completion controls."
       );
       equal(
         widget.querySelectorAll(".blank-canvas__todo-item[data-source='api'] .blank-canvas__todo-action").length,
         0,
         "Canvas rows should not expose custom-assignment actions."
       );
+      equal(
+        widget.querySelector(".blank-canvas__todo-item[data-source='custom'] [data-action='toggle-custom-assignment-done']").textContent,
+        "Mark as done",
+        "Custom rows should expose the completion toggle."
+      );
     } finally {
       widget.remove();
+    }
+  });
+
+  addTest("Completed custom rows stay visible and highlight their completion toggle", () => {
+    const widget = root.dashboardView.createWidget();
+    document.body.appendChild(widget);
+    try {
+      root.dashboardView.syncPresentationState(widget, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true
+      });
+
+      root.dashboardView.renderItems(widget, {
+        status: "ready",
+        source: "api",
+        items: [
+          {
+            title: "Custom reading",
+            courseName: "General",
+            dueSummaryText: "Mon, Apr 20 at 5:00 PM",
+            dueLabel: "Done",
+            statusTone: "done",
+            source: "custom",
+            customAssignmentId: "custom-1",
+            completedAt: "2026-04-14T02:00:00.000Z",
+            url: ""
+          }
+        ]
+      });
+
+      const row = widget.querySelector(".blank-canvas__todo-item[data-source='custom']");
+      const action = row.querySelector("[data-action='toggle-custom-assignment-done']");
+      equal(row.dataset.completed, "true", "Completed custom rows should stay rendered.");
+      equal(action.dataset.completed, "true", "The completion toggle should reflect the completed state.");
+      equal(action.getAttribute("aria-pressed"), "true", "The completion toggle should expose its active state.");
+      equal(
+        widget.querySelector(".blank-canvas__todo-count").textContent,
+        "0 Assignments",
+        "Completed custom rows should no longer count toward the assignment counter."
+      );
+      equal(
+        widget.querySelector(".blank-canvas__todo-status").textContent,
+        "Done",
+        "Completed custom rows should expose a Done status."
+      );
+    } finally {
+      widget.remove();
+    }
+  });
+
+  addTest("Dashboard widget context menu hides native Canvas assignments", async () => {
+    await resetIgnoredAssignments();
+    const widget = root.dashboardView.createWidget();
+    document.body.appendChild(widget);
+    const originalConfirm = window.confirm;
+
+    try {
+      root.dashboardView.syncPresentationState(widget, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true
+      });
+
+      root.dashboardView.renderItems(
+        widget,
+        {
+          status: "ready",
+          source: "api",
+          items: [
+            {
+              title: "Canvas assignment",
+              courseId: "101",
+              courseName: "English 101",
+              dueSummaryText: "Fri, Apr 10 at 11:59 PM",
+              dueLabel: "Due",
+              statusTone: "pending",
+              source: "api",
+              url: "https://canvas.example.com/courses/101/assignments/7"
+            }
+          ]
+        },
+        {
+          uiLayoutMode: "editorial",
+          uiPhaseAgendaList: true,
+          uiPhaseAssignmentHierarchy: true
+        }
+      );
+
+      window.confirm = () => true;
+      const row = widget.querySelector(".blank-canvas__todo-item[data-source='api']");
+      let prevented = false;
+      await root.dashboardWidgetActions.handleWidgetContextMenu({
+        target: row,
+        preventDefault() {
+          prevented = true;
+        }
+      });
+
+      const ignoredKeys = await root.ignoredAssignments.listIgnoredAssignmentKeys();
+      equal(ignoredKeys.length, 1, "Right-click hiding should persist one ignored native assignment key.");
+      assert(prevented, "Right-click hiding should suppress the default context menu.");
+    } finally {
+      window.confirm = originalConfirm;
+      widget.remove();
+      await resetIgnoredAssignments();
     }
   });
 
@@ -1242,6 +1709,11 @@
       assert(snapshot.courseOptionCount >= 1, "The custom-assignment modal should include at least the General option.");
       equal(snapshot.timeValue, "11:59 PM", "The custom modal should default the time field to 11:59 PM.");
       equal(snapshot.selectedDueDate, "", "New custom assignments should start with no selected due date.");
+      equal(
+        document.querySelector("#blank-canvas-custom-assignment-modal select").value,
+        "",
+        "New custom assignments should start with the class placeholder selected."
+      );
       assert(
         document.querySelector("#blank-canvas-custom-assignment-modal .blank-canvas__custom-modal-calendar-days"),
         "The custom modal should render the custom calendar grid."
@@ -1311,6 +1783,10 @@
             url: "https://canvas.example.com/courses/101/assignments/8"
           }
         ]
+      }, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true
       });
 
       const snapshot = root.dashboardView.getSnapshot();
@@ -1318,6 +1794,491 @@
       equal(snapshot.normalizedTitleCount, 1, "Widget diagnostics should report normalized titles.");
     } finally {
       widget.remove();
+    }
+  });
+
+  addTest("Custom assignment modal styles keep action buttons rounded", () => {
+    const cssText = root.customAssignmentModal.getStyles();
+    assert(
+      cssText.includes(".blank-canvas__custom-modal-save") && cssText.includes("border-radius: 18px"),
+      "The custom assignment modal should keep rounded save/cancel/close controls."
+    );
+  });
+
+  /*
+  addTest("Phase 6 busy index model maps assignment urgency into stable bands", () => {
+    const calm = root.dashboardSummaryModel.buildSummary([]);
+    const light = root.dashboardSummaryModel.buildSummary([
+      {
+        title: "Reading",
+        dueAt: "2026-04-14T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-14T23:59:00.000Z").getTime(),
+        statusTone: "pending"
+      },
+      {
+        title: "Notes",
+        dueAt: "2026-04-15T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-15T23:59:00.000Z").getTime(),
+        statusTone: "pending"
+      }
+    ], {
+      now: "2026-04-14T18:00:00.000Z"
+    });
+    const busy = root.dashboardSummaryModel.buildSummary([
+      {
+        title: "Quiz",
+        dueAt: "2026-04-14T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-14T23:59:00.000Z").getTime(),
+        statusTone: "pending"
+      },
+      {
+        title: "Lab",
+        dueAt: "2026-04-14T22:00:00.000Z",
+        dueSortValue: new Date("2026-04-14T22:00:00.000Z").getTime(),
+        statusTone: "pending"
+      },
+      {
+        title: "Essay",
+        dueAt: "2026-04-14T20:00:00.000Z",
+        dueSortValue: new Date("2026-04-14T20:00:00.000Z").getTime(),
+        statusTone: "pending"
+      }
+    ], {
+      now: "2026-04-14T18:00:00.000Z"
+    });
+    const heavy = root.dashboardSummaryModel.buildSummary([
+      {
+        title: "Problem set",
+        dueAt: "2026-04-14T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-14T23:59:00.000Z").getTime(),
+        statusTone: "pending"
+      },
+      {
+        title: "Writeup",
+        dueAt: "2026-04-14T21:00:00.000Z",
+        dueSortValue: new Date("2026-04-14T21:00:00.000Z").getTime(),
+        statusTone: "pending"
+      },
+      {
+        title: "Report",
+        dueAt: "2026-04-14T22:30:00.000Z",
+        dueSortValue: new Date("2026-04-14T22:30:00.000Z").getTime(),
+        statusTone: "pending"
+      },
+      {
+        title: "Checklist",
+        dueAt: "2026-04-15T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-15T23:59:00.000Z").getTime(),
+        statusTone: "pending"
+      }
+    ], {
+      now: "2026-04-14T18:00:00.000Z"
+    });
+    const crunch = root.dashboardSummaryModel.buildSummary([
+      {
+        title: "Project",
+        statusTone: "missing",
+        dueAt: "2026-04-10T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-10T23:59:00.000Z").getTime()
+      },
+      {
+        title: "Lab",
+        statusTone: "overdue",
+        dueAt: "2026-04-11T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-11T23:59:00.000Z").getTime()
+      },
+      {
+        title: "Essay",
+        statusTone: "pending",
+        dueAt: "2026-04-14T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-14T23:59:00.000Z").getTime()
+      },
+      {
+        title: "Quiz",
+        statusTone: "pending",
+        dueAt: "2026-04-15T23:59:00.000Z",
+        dueSortValue: new Date("2026-04-15T23:59:00.000Z").getTime()
+      }
+    ], {
+      now: "2026-04-14T18:00:00.000Z"
+    });
+
+    equal(calm.busyIndex, 0, "No pending work should produce a 0 busy index.");
+    equal(calm.busyLabel, "Calm", "A 0 busy index should be labeled Calm.");
+    equal(light.busyLabel, "Light", "A small amount of pending work should stay in the Light band.");
+    equal(busy.busyLabel, "Busy", "Mid-range pending work should map into the Busy band.");
+    equal(heavy.busyLabel, "Heavy", "Dense upcoming work should map into the Heavy band.");
+    equal(crunch.busyLabel, "Crunch", "Missing and overdue work should saturate into the Crunch band.");
+  });
+
+  addTest("Phase 6 next due selection prefers the earliest merged upcoming item", () => {
+    const summary = root.dashboardSummaryModel.buildSummary([
+      {
+        title: "Custom prep",
+        primaryTitle: "Custom prep",
+        secondaryCourseName: "General",
+        dueAt: "2026-04-18T17:00:00.000Z",
+        dueTimeText: "5:00 PM",
+        dueDateText: "Sat, Apr 18",
+        dueSummaryText: "Sat, Apr 18 at 5:00 PM",
+        dueSortValue: new Date("2026-04-18T17:00:00.000Z").getTime(),
+        statusTone: "pending",
+        source: "custom"
+      },
+      {
+        title: "Canvas quiz",
+        primaryTitle: "Canvas quiz",
+        secondaryCourseName: "Math 3D",
+        dueAt: "2026-04-15T23:59:00.000Z",
+        dueTimeText: "11:59 PM",
+        dueDateText: "Wed, Apr 15",
+        dueSummaryText: "Wed, Apr 15 at 11:59 PM",
+        dueSortValue: new Date("2026-04-15T23:59:00.000Z").getTime(),
+        statusTone: "pending",
+        source: "api"
+      }
+    ], {
+      now: "2026-04-14T18:00:00.000Z"
+    });
+
+    equal(summary.nextDueTitle, "Canvas quiz", "The summary should use the earliest due assignment as the next due item.");
+    equal(summary.nextDueCourse, "Math 3D", "The next due summary should preserve course metadata.");
+  });
+
+  addTest("Phase 6 summary strip renders only when the phase is enabled", () => {
+    const widget = root.dashboardView.createWidget();
+    document.body.appendChild(widget);
+    try {
+      root.dashboardView.syncPresentationState(widget, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true,
+        uiPhaseTodayStrip: false
+      });
+
+      root.dashboardView.renderItems(widget, {
+        status: "ready",
+        source: "api",
+        items: []
+      }, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true,
+        uiPhaseTodayStrip: false
+      });
+
+      equal(widget.querySelector(".blank-canvas__todo-summary"), null, "Phase 6 should not render the summary strip while disabled.");
+
+      root.dashboardView.renderItems(widget, {
+        status: "ready",
+        source: "api",
+        items: []
+      }, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true,
+        uiPhaseTodayStrip: true
+      });
+
+      assert(widget.querySelector(".blank-canvas__todo-summary"), "Phase 6 should render the summary strip when enabled.");
+    } finally {
+      widget.remove();
+    }
+  });
+
+  addTest("Phase 6 empty-state summary stays calm and shows no due-soon text", () => {
+    const summary = root.dashboardSummaryModel.buildSummary([]);
+    equal(summary.busyIndex, 0, "The empty-state summary should be completely calm.");
+    equal(summary.busyLabel, "Calm", "The empty-state summary should use the Calm label.");
+    equal(summary.nextDueText, "Nothing due soon", "The empty-state summary should avoid fake urgency.");
+  });
+
+  addTest("Phase 6 share card payload includes score, next due, and timestamp", () => {
+    const payload = root.dashboardShareCard.buildPayload({
+      busyIndex: 64,
+      busyLabel: "Heavy",
+      nextDueTitle: "Lab 4",
+      nextDueCourse: "Physics 7E",
+      nextDueSummary: "Today · 11:59 PM",
+      updatedAt: "2026-04-14T18:00:00.000Z"
+    });
+
+    equal(payload.busyIndex, 64, "The share payload should include the busy score.");
+    equal(payload.busyLabel, "Heavy", "The share payload should include the busy label.");
+    equal(payload.nextDueTitle, "Lab 4", "The share payload should include the next due title.");
+    assert(payload.updatedLabel.includes("2026"), "The share payload should include a formatted updated timestamp.");
+  });
+
+  addTest("Phase 6 share copy falls back cleanly when clipboard image support is unavailable", async () => {
+    const widget = root.dashboardView.createWidget();
+    document.body.appendChild(widget);
+    const originalDownload = root.dashboardShareCard.downloadImage;
+    const originalCopy = root.dashboardShareCard.copyImage;
+    let fallbackDownloads = 0;
+
+    try {
+      root.dashboardSummaryRenderer.renderSummary(widget, {
+        timeframeLabel: "Today",
+        busyIndex: 64,
+        busyLabel: "Heavy",
+        urgentCount: 2,
+        overdueCount: 1,
+        nextDueTitle: "Lab 4",
+        nextDueCourse: "Physics 7E",
+        nextDueSummary: "Today · 11:59 PM",
+        nextDueText: "Lab 4 · Today · 11:59 PM",
+        updatedAt: "2026-04-14T18:00:00.000Z"
+      }, {
+        enabled: true
+      });
+
+      root.dashboardSummaryRenderer.toggleShareSurface(widget);
+      root.dashboardShareCard.copyImage = async () => ({
+        ok: false,
+        fallback: "download"
+      });
+      root.dashboardShareCard.downloadImage = async () => {
+        fallbackDownloads += 1;
+        return {
+          ok: true
+        };
+      };
+
+      await root.dashboardSummaryRenderer.copyShareImage(widget);
+
+      equal(fallbackDownloads, 1, "Summary share copy should fall back to a PNG download when clipboard image support is unavailable.");
+      assert(
+        widget.querySelector(".blank-canvas__todo-share-message").textContent.includes("download"),
+        "The summary share surface should explain when it used the download fallback."
+      );
+    } finally {
+      root.dashboardShareCard.copyImage = originalCopy;
+      root.dashboardShareCard.downloadImage = originalDownload;
+      widget.remove();
+    }
+  });
+
+  addTest("Phase 6 summary styles include a narrow-width stacked layout", () => {
+    const cssText = root.dashboardStyles.getStyles({
+      uiLayoutMode: "editorial",
+      uiPhaseAgendaList: true,
+      uiPhaseAssignmentHierarchy: true,
+      uiPhaseTodayStrip: true
+    });
+
+    assert(cssText.includes(".blank-canvas__todo-summary"), "Dashboard styles should include summary strip rules.");
+    assert(cssText.includes("grid-template-columns: 1fr;"), "Dashboard styles should stack the summary strip on narrower widths.");
+  });
+
+  });
+  */
+
+  addTest("Dashboard layout mounts Assignments and Classes in order", () => {
+    const fixture = createFixture(`
+      <div class="ic-DashboardLayout__Main" style="width: 1400px;">
+        <section id="DashboardCard_Container"></section>
+      </div>
+    `);
+    document.body.appendChild(fixture);
+
+    try {
+      const mount = {
+        container: fixture.querySelector(".ic-DashboardLayout__Main"),
+        anchor: fixture.querySelector("#DashboardCard_Container")
+      };
+      const rowItems = [
+        {
+          primaryTitle: "Essay Draft",
+          secondaryCourseName: "English 101",
+          dueSummaryText: "Fri, Apr 10 at 11:59 PM",
+          statusLabel: "Missing",
+          statusTone: "missing",
+          dueAt: "2026-04-10T23:59:00.000Z",
+          dueSortValue: new Date("2026-04-10T23:59:00.000Z").getTime(),
+          url: "https://canvas.example.com/courses/101/assignments/7"
+        }
+      ];
+
+      root.dashboardLayout.sync({
+        mount,
+        settings: {
+          uiLayoutMode: "editorial",
+          uiPhaseAgendaList: true,
+          uiPhaseAssignmentHierarchy: true
+        },
+        assignmentSnapshot: {
+          status: "ready",
+          source: "api",
+          items: rowItems
+        },
+        rowItems
+      });
+
+      const layoutSnapshot = root.dashboardLayout.getSnapshot();
+      equal(
+        layoutSnapshot.sections.join(","),
+        "assignments,classes-anchor",
+        "The dashboard layout should expose the ordered dashboard sections."
+      );
+      equal(layoutSnapshot.layoutMode, "split", "Wide dashboard layouts should use the split mode.");
+      equal(layoutSnapshot.classesInRightColumn, true, "Wide dashboard layouts should place classes in the right column.");
+      equal(layoutSnapshot.leftColumnMounted, true, "Wide dashboard layouts should mount the assignments column.");
+      equal(layoutSnapshot.rightColumnMounted, true, "Wide dashboard layouts should mount the classes column.");
+      equal(
+        fixture.querySelector("#blank-canvas-dashboard-sections").nextElementSibling.id,
+        "DashboardCard_Container",
+        "The native classes section should remain after the extension-owned sections."
+      );
+    } finally {
+      root.dashboard.teardown();
+      fixture.remove();
+    }
+  });
+
+  addTest("Assignments widget remains the only extension-mounted dashboard section", () => {
+    const fixture = createFixture(`
+      <div class="ic-DashboardLayout__Main" style="width: 1400px;">
+        <section id="DashboardCard_Container"></section>
+      </div>
+    `);
+    document.body.appendChild(fixture);
+
+    try {
+      root.dashboardLayout.sync({
+        mount: {
+          container: fixture.querySelector(".ic-DashboardLayout__Main"),
+          anchor: fixture.querySelector("#DashboardCard_Container")
+        },
+        settings: {
+          uiLayoutMode: "editorial",
+          uiPhaseAgendaList: true,
+          uiPhaseAssignmentHierarchy: true
+        },
+        assignmentSnapshot: {
+          status: "ready",
+          source: "api",
+          items: []
+        },
+        rowItems: []
+      });
+
+      equal(
+        fixture.querySelector("#blank-canvas-dashboard-todo .blank-canvas__today-strip"),
+        null,
+        "The assignments widget should not contain a rolled-back today-strip section."
+      );
+      equal(
+        fixture.querySelector("#blank-canvas-dashboard-today"),
+        null,
+        "The dashboard should not mount a standalone today-strip section."
+      );
+    } finally {
+      root.dashboard.teardown();
+      fixture.remove();
+    }
+  });
+
+  addTest("Dashboard diagnostics report section order without a today strip", () => {
+    const fixture = createFixture(`
+      <div class="ic-DashboardLayout__Main" style="width: 1400px;">
+        <section id="DashboardCard_Container"></section>
+      </div>
+    `);
+    document.body.appendChild(fixture);
+
+    const originalGetPageContext = root.canvas.getPageContext;
+    const originalIsCanvasLikePage = root.canvas.isCanvasLikePage;
+
+    try {
+      root.canvas.getPageContext = () => ({
+        path: "/",
+        isDashboard: true,
+        isCourse: false,
+        courseId: "",
+        globalNavKey: "dashboard"
+      });
+      root.canvas.isCanvasLikePage = () => true;
+
+      root.dashboardLayout.sync({
+        mount: {
+          container: fixture.querySelector(".ic-DashboardLayout__Main"),
+          anchor: fixture.querySelector("#DashboardCard_Container")
+        },
+        settings: {
+          ...root.defaults,
+          enabled: true,
+          showDashboardTodoList: true,
+          uiLayoutMode: "editorial",
+          uiPhaseAgendaList: true,
+          uiPhaseAssignmentHierarchy: true
+        },
+        assignmentSnapshot: {
+          status: "ready",
+          source: "api",
+          items: []
+        },
+        rowItems: []
+      });
+
+      const report = root.diagnostics.buildReport({
+        ...root.defaults,
+        enabled: true,
+        showDashboardTodoList: true,
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true
+      });
+
+      equal(
+        report.dashboardLayout.sections.join(","),
+        "assignments,classes-anchor",
+        "Diagnostics should report the dashboard section order."
+      );
+      equal(report.dashboardTodo.classesAnchorFound, true, "Dashboard snapshots should report the classes anchor.");
+      equal(report.dashboardLayout.layoutMode, "split", "Diagnostics should report the active dashboard layout mode.");
+      equal(report.dashboardLayout.classesInRightColumn, true, "Diagnostics should report when classes are mounted in the right column.");
+    } finally {
+      root.canvas.getPageContext = originalGetPageContext;
+      root.canvas.isCanvasLikePage = originalIsCanvasLikePage;
+      root.dashboard.teardown();
+      fixture.remove();
+    }
+  });
+
+  addTest("Dashboard layout falls back to stacked mode below the split breakpoint", () => {
+    const fixture = createFixture(`
+      <div class="ic-DashboardLayout__Main" style="width: 840px;">
+        <section id="DashboardCard_Container"></section>
+      </div>
+    `);
+    document.body.appendChild(fixture);
+
+    try {
+      root.dashboardLayout.sync({
+        mount: {
+          container: fixture.querySelector(".ic-DashboardLayout__Main"),
+          anchor: fixture.querySelector("#DashboardCard_Container")
+        },
+        settings: {
+          uiLayoutMode: "editorial",
+          uiPhaseAgendaList: true,
+          uiPhaseAssignmentHierarchy: true
+        },
+        assignmentSnapshot: {
+          status: "ready",
+          source: "api",
+          items: []
+        },
+        rowItems: []
+      });
+
+      const layoutSnapshot = root.dashboardLayout.getSnapshot();
+      equal(layoutSnapshot.layoutMode, "stacked", "Narrow dashboard layouts should return to the stacked mode.");
+      equal(layoutSnapshot.classesInRightColumn, false, "Stacked layouts should not report classes in the right column.");
+      equal(layoutSnapshot.rightColumnMounted, false, "Stacked layouts should not report a dedicated right column.");
+    } finally {
+      root.dashboard.teardown();
+      fixture.remove();
     }
   });
 

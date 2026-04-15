@@ -1,5 +1,6 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
+  const HOST_ID = "blank-canvas-dashboard-sections";
   const WIDGET_ID = "blank-canvas-dashboard-todo";
 
   function getStyles(settings) {
@@ -8,10 +9,57 @@
       settings,
       root.ui.PHASE_ASSIGNMENT_HIERARCHY
     );
+    const splitMinWidth = root.dashboardLayout
+      ? root.dashboardLayout.SPLIT_LAYOUT_MIN_WIDTH
+      : 1180;
 
     return `
+      #${HOST_ID} {
+        display: grid;
+        gap: 14px;
+        margin: 0 0 var(--blank-canvas-space-4);
+      }
+
+      [data-blank-canvas-dashboard-layout='split'] {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.72fr) !important;
+        column-gap: 56px !important;
+        row-gap: 10px !important;
+        align-items: start !important;
+      }
+
+      [data-blank-canvas-dashboard-layout='split'] .ic-Dashboard-header__layout,
+      [data-blank-canvas-dashboard-layout='split'] .ic-Dashboard-header,
+      [data-blank-canvas-dashboard-layout='split'] #${HOST_ID} {
+        grid-column: 1 !important;
+      }
+
+      [data-blank-canvas-dashboard-layout='split'] #DashboardCard_Container {
+        grid-column: 2 !important;
+        grid-row: 1 / span 3 !important;
+        align-self: start !important;
+        padding-right: 48px !important;
+        box-sizing: border-box !important;
+      }
+
+      [data-blank-canvas-dashboard-layout='split'] #DashboardCard_Container,
+      [data-blank-canvas-dashboard-layout='split'] #DashboardCard_Container > div,
+      [data-blank-canvas-dashboard-layout='split'] #DashboardCard_Container .ic-DashboardCard__box,
+      [data-blank-canvas-dashboard-layout='split'] #DashboardCard_Container .ic-DashboardCard__box__container,
+      [data-blank-canvas-dashboard-layout='split'] #DashboardCard_Container .ic-DashboardCard {
+        width: 100% !important;
+        max-width: 460px !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        justify-self: start !important;
+      }
+
+      [data-blank-canvas-dashboard-layout='split'] #${HOST_ID}[data-blank-canvas-dashboard-column='left'] {
+        align-self: start;
+      }
+
       #${WIDGET_ID} {
-        margin: 0 0 var(--blank-canvas-space-5);
+        margin: 0;
         padding: 18px 20px;
         border-radius: var(--blank-canvas-radius-lg);
         border: 1px solid var(--blank-canvas-border-subtle);
@@ -72,8 +120,10 @@
         border: 1px solid var(--blank-canvas-border-strong);
         background: rgba(255, 255, 255, 0.68);
         color: var(--blank-canvas-color-text);
-        padding: 8px 12px;
-        font-size: 0.82rem;
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0 12px;
+        font-size: 1.05rem;
         font-weight: 600;
         white-space: nowrap;
       }
@@ -223,6 +273,30 @@
         color: var(--blank-canvas-color-text);
       }
 
+      #${WIDGET_ID} .blank-canvas__todo-action[data-action='toggle-custom-assignment-done'][data-completed='true'] {
+        background: rgba(70, 131, 97, 0.14);
+        border-color: rgba(70, 131, 97, 0.45);
+        color: #2f6f4f;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-item[data-completed='true'] .blank-canvas__todo-title {
+        color: rgba(39, 57, 49, 0.8);
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-item[data-completed='true'] .blank-canvas__todo-link {
+        opacity: 0.88;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-item[data-completed='true'] .blank-canvas__todo-due-summary {
+        visibility: hidden;
+      }
+
+      #${WIDGET_ID} .blank-canvas__todo-item[data-status-tone='done'] .blank-canvas__todo-status {
+        color: #2f6f4f;
+        border-color: rgba(70, 131, 97, 0.35);
+        background: rgba(70, 131, 97, 0.08);
+      }
+
       #${WIDGET_ID} .blank-canvas__todo-due-summary {
         margin-top: 0;
         color: var(--blank-canvas-color-accent);
@@ -268,7 +342,17 @@
 
       ${useAgendaList
         ? `
+      @media (max-width: ${splitMinWidth - 1}px) {
+        [data-blank-canvas-dashboard-layout='stacked'] {
+          display: block !important;
+        }
+      }
+
       @media (max-width: 720px) {
+        #${HOST_ID} {
+          gap: 14px;
+        }
+
         #${WIDGET_ID} .blank-canvas__todo-header {
           flex-direction: column;
         }
@@ -276,6 +360,11 @@
         #${WIDGET_ID} .blank-canvas__todo-header-actions {
           width: 100%;
           justify-content: space-between;
+        }
+
+        #${WIDGET_ID} .blank-canvas__todo-summary {
+          grid-template-columns: 1fr;
+          align-items: start;
         }
 
         #${WIDGET_ID} .blank-canvas__todo-link {
@@ -295,6 +384,7 @@
   }
 
   root.dashboardStyles = {
+    HOST_ID,
     WIDGET_ID,
     getStyles
   };

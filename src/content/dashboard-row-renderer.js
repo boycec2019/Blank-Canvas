@@ -42,6 +42,7 @@
     return {
       assignmentSource: snapshot.source || "dom",
       assignmentStatus: snapshot.status || "idle",
+      activeItemCount: rowItems.filter((item) => !item.completedAt).length,
       customItemCount: rowItems.filter((item) => item.source === "custom").length,
       fallbackCourseCount: rowItems.filter((item) => item.isFallbackCourseName).length,
       normalizedTitleCount: rowItems.filter((item) => item.titleWasNormalized).length
@@ -56,14 +57,20 @@
     const actions = createElement("span", "blank-canvas__todo-actions");
     const editAction = createElement("button", "blank-canvas__todo-action", "Edit");
     const deleteAction = createElement("button", "blank-canvas__todo-action", "Delete");
+    const doneAction = createElement("button", "blank-canvas__todo-action", "Mark as done");
 
     editAction.type = "button";
     deleteAction.type = "button";
+    doneAction.type = "button";
     editAction.dataset.action = "edit-custom-assignment";
     deleteAction.dataset.action = "delete-custom-assignment";
+    doneAction.dataset.action = "toggle-custom-assignment-done";
     editAction.dataset.customAssignmentId = item.customAssignmentId;
     deleteAction.dataset.customAssignmentId = item.customAssignmentId;
-    actions.append(editAction, deleteAction);
+    doneAction.dataset.customAssignmentId = item.customAssignmentId;
+    doneAction.dataset.completed = item.completedAt ? "true" : "false";
+    doneAction.setAttribute("aria-pressed", item.completedAt ? "true" : "false");
+    actions.append(editAction, deleteAction, doneAction);
 
     return actions;
   }
@@ -91,6 +98,10 @@
     listItem.dataset.debugSource = item.debugSource || "item";
     listItem.dataset.titleNormalized = item.titleWasNormalized ? "true" : "false";
     listItem.dataset.source = item.source || "unknown";
+    listItem.dataset.completed = item.completedAt ? "true" : "false";
+    listItem.dataset.assignmentKey = root.assignmentCourseResolver
+      ? root.assignmentCourseResolver.getAssignmentKey(item)
+      : "";
     setNavigationState(surface, item.url);
 
     main.appendChild(title);
@@ -123,8 +134,9 @@
     const currentSignature = widget.dataset.signature || "";
     const stats = buildWidgetStats(rowItems, snapshot);
 
-    count.textContent = options.formatAssignmentCount(rowItems.length);
-    widget.dataset.itemCount = String(rowItems.length);
+    count.textContent = options.formatAssignmentCount(stats.activeItemCount);
+    widget.dataset.itemCount = String(stats.activeItemCount);
+    widget.dataset.renderedItemCount = String(rowItems.length);
     widget.dataset.assignmentSource = stats.assignmentSource;
     widget.dataset.assignmentStatus = stats.assignmentStatus;
     widget.dataset.customItemCount = String(stats.customItemCount);

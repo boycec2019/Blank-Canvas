@@ -65,13 +65,12 @@
 
     const header = createElement("header", "blank-canvas__custom-modal-header");
     const headerCopy = createElement("div", "blank-canvas__custom-modal-copy");
-    const eyebrow = createElement("p", "blank-canvas__custom-modal-eyebrow", "Dashboard tool");
     const title = createElement("h3", "", "New custom assignment");
     title.id = `${MODAL_ID}-title`;
     const close = createElement("button", "blank-canvas__custom-modal-close", "Close");
     close.type = "button";
 
-    headerCopy.append(eyebrow, title);
+    headerCopy.append(title);
     header.append(headerCopy, close);
 
     const form = createElement("form", "blank-canvas__custom-modal-form");
@@ -79,26 +78,19 @@
 
     const courseLabel = createElement("label", "blank-canvas__custom-modal-field");
     courseLabel.htmlFor = `${MODAL_ID}-course`;
-    courseLabel.append(
-      createElement("strong", "", "Class"),
-      createElement("span", "", "Pick a Canvas class or General.")
-    );
+    courseLabel.append(createElement("strong", "", "Class"));
     const courseField = document.createElement("select");
     courseField.id = `${MODAL_ID}-course`;
     courseField.name = "customAssignmentCourse";
-
-    const courseHint = createElement(
-      "p",
-      "blank-canvas__custom-modal-hint",
-      "Class options come from the current page."
-    );
+    courseField.required = true;
+    const courseFieldWrapper = createElement("span", "blank-canvas__custom-modal-select-wrap");
+    const courseFieldCaret = createElement("span", "blank-canvas__custom-modal-select-caret");
+    courseFieldCaret.setAttribute("aria-hidden", "true");
+    courseFieldWrapper.append(courseField, courseFieldCaret);
 
     const titleLabel = createElement("label", "blank-canvas__custom-modal-field");
     titleLabel.htmlFor = `${MODAL_ID}-title-input`;
-    titleLabel.append(
-      createElement("strong", "", "Assignment"),
-      createElement("span", "", "Use a short, readable title.")
-    );
+    titleLabel.append(createElement("strong", "", "Assignment"));
     const titleField = document.createElement("input");
     titleField.id = `${MODAL_ID}-title-input`;
     titleField.name = "customAssignmentTitle";
@@ -110,10 +102,7 @@
       "section",
       "blank-canvas__custom-modal-field blank-canvas__custom-modal-schedule"
     );
-    dueSection.append(
-      createElement("strong", "", "Due date"),
-      createElement("span", "", "Pick a day, then set a compact time.")
-    );
+    dueSection.append(createElement("strong", "", "Due date"));
 
     if (!root.customAssignmentSchedule || typeof root.customAssignmentSchedule.create !== "function") {
       throw new Error("Custom assignment schedule helper is unavailable.");
@@ -135,7 +124,7 @@
     cancel.type = "button";
     actions.append(save, cancel);
 
-    form.append(courseLabel, courseField, courseHint, titleLabel, titleField, dueSection, error, actions);
+    form.append(courseLabel, courseFieldWrapper, titleLabel, titleField, dueSection, error, actions);
     dialog.append(header, form);
     rootElement.append(backdrop, dialog);
     document.body.appendChild(rootElement);
@@ -146,7 +135,6 @@
       cancel,
       close,
       courseField,
-      courseHint,
       error,
       form,
       save,
@@ -167,6 +155,8 @@
       field.addEventListener("input", clearError);
       field.addEventListener("change", clearError);
     });
+    courseField.addEventListener("input", syncCoursePlaceholderState);
+    courseField.addEventListener("change", syncCoursePlaceholderState);
 
     return elements;
   }
@@ -191,9 +181,25 @@
     }
   }
 
+  function syncCoursePlaceholderState() {
+    if (!elements) {
+      return;
+    }
+
+    const hasSelection = Boolean(String(elements.courseField.value || "").trim());
+    elements.courseField.dataset.placeholder = hasSelection ? "false" : "true";
+  }
+
   function renderCourseOptions(selectedCourseId) {
     const modalElements = ensureMounted();
     modalElements.courseField.replaceChildren();
+
+    const placeholderOption = document.createElement("option");
+    placeholderOption.value = "";
+    placeholderOption.textContent = "Select a class...";
+    placeholderOption.disabled = true;
+    placeholderOption.hidden = true;
+    modalElements.courseField.appendChild(placeholderOption);
 
     currentCourseOptions.forEach((option) => {
       const optionElement = document.createElement("option");
@@ -204,16 +210,16 @@
 
     modalElements.courseField.value = currentCourseOptions.some((option) => option.courseId === selectedCourseId)
       ? selectedCourseId
-      : root.customAssignments.GENERAL_COURSE_ID;
-    modalElements.courseHint.textContent = root.customAssignmentForm.getCourseHintMessage(currentCourseOptions);
+      : "";
+    syncCoursePlaceholderState();
   }
 
   function getDraft() {
     const modalElements = ensureMounted();
-    const selectedId = modalElements.courseField.value || root.customAssignments.GENERAL_COURSE_ID;
+    const selectedId = String(modalElements.courseField.value || "").trim();
     const selectedCourse = currentCourseOptions.find((option) => option.courseId === selectedId) || {
-      courseId: root.customAssignments.GENERAL_COURSE_ID,
-      courseName: root.customAssignments.GENERAL_COURSE_NAME
+      courseId: "",
+      courseName: ""
     };
     const scheduleDraft = scheduleController
       ? scheduleController.readDraft()
@@ -256,7 +262,7 @@
       ? "Edit custom assignment"
       : "New custom assignment";
     modalElements.titleField.value = draft.title;
-    renderCourseOptions(draft.courseId || root.customAssignments.GENERAL_COURSE_ID);
+    renderCourseOptions(draft.courseId || "");
     if (scheduleController) {
       scheduleController.applyDraft(draft);
     }

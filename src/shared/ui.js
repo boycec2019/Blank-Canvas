@@ -6,6 +6,7 @@
   const PHASE_LEFT_RAIL_SIMPLIFICATION = "uiPhaseLeftRailSimplification";
   const PHASE_AGENDA_LIST = "uiPhaseAgendaList";
   const PHASE_ASSIGNMENT_HIERARCHY = "uiPhaseAssignmentHierarchy";
+  const PHASE_DASHBOARD_UI_OVERHAUL = "uiPhaseDashboardUiOverhaul";
 
   const layoutModes = Object.freeze({
     classic: Object.freeze({
@@ -52,10 +53,10 @@
       description: "Enables refined assignment row metadata and status emphasis."
     }),
     Object.freeze({
-      id: "uiPhaseTodayStrip",
-      className: "blank-canvas--phase-today-strip",
-      label: "Phase 6: Today strip and focus summary",
-      description: "Turns on the compact top summary surface once it exists."
+      id: PHASE_DASHBOARD_UI_OVERHAUL,
+      className: "blank-canvas--phase-dashboard-ui-overhaul",
+      label: "Phase 6.5: Dashboard UI overhaul",
+      description: "Prepares the final dashboard visual system before focused page variants."
     }),
     Object.freeze({
       id: "uiPhaseFocusedPages",
@@ -220,6 +221,7 @@
     PHASE_LEFT_RAIL_SIMPLIFICATION,
     PHASE_AGENDA_LIST,
     PHASE_ASSIGNMENT_HIERARCHY,
+    PHASE_DASHBOARD_UI_OVERHAUL,
     layoutModes,
     phaseDefinitions,
     normalizeLayoutMode,

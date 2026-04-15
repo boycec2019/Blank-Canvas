@@ -82,11 +82,15 @@
   function teardown() {
     resetManagedElements();
     removeStyleElement();
-    if (root.dashboard) {
-      root.dashboard.teardown();
-    }
-    if (root.customAssignmentModal) {
-      root.customAssignmentModal.teardown();
+    if (root.featureRegistry) {
+      root.featureRegistry.teardown();
+    } else {
+      if (root.dashboard) {
+        root.dashboard.teardown();
+      }
+      if (root.customAssignmentModal) {
+        root.customAssignmentModal.teardown();
+      }
     }
     root.themeStyles.clearRootUiState();
     document.documentElement.classList.remove(
@@ -118,13 +122,26 @@
       context.isDashboard && settings.showDashboardTodoList
         ? root.assignments.ensurePendingAssignments()
         : root.assignments.getSnapshot();
-    const dashboardTodo = root.dashboard
-      ? root.dashboard.renderPendingAssignmentsWidget(settings, assignmentSnapshot)
+    const featureReport = root.featureRegistry
+      ? root.featureRegistry.sync({
+          settings,
+          context,
+          assignmentSnapshot,
+          appliedCounts
+        })
       : null;
+    const dashboardTodo =
+      featureReport &&
+      featureReport.featureSnapshots &&
+      featureReport.featureSnapshots["dashboard-assignments"]
+        ? featureReport.featureSnapshots["dashboard-assignments"]
+        : null;
 
     const report = root.diagnostics.buildReport(settings);
     report.domRuleApplications = appliedCounts;
     report.dashboardTodo = dashboardTodo;
+    report.mountedFeatureIds = featureReport ? featureReport.mountedFeatureIds : [];
+    report.featureSnapshots = featureReport ? featureReport.featureSnapshots : {};
     root.debug.log("renderer", "Rules rendered.", report);
 
     return report;

@@ -9,7 +9,7 @@
     uiPhaseLeftRailSimplification: true,
     uiPhaseAgendaList: true,
     uiPhaseAssignmentHierarchy: true,
-    uiPhaseTodayStrip: false,
+    uiPhaseDashboardUiOverhaul: false,
     uiPhaseFocusedPages: false,
     uiPhaseMobilePolish: false,
     uiPhaseMotionPolish: false,
@@ -56,9 +56,9 @@
       label: "Phase 5: Assignment row hierarchy",
       description: "Keeps refined assignment row hierarchy behind a temporary rollout switch."
     },
-    uiPhaseTodayStrip: {
-      label: "Phase 6: Today strip and focus summary",
-      description: "Keeps the top summary surface behind a temporary rollout switch."
+    uiPhaseDashboardUiOverhaul: {
+      label: "Phase 6.5: Dashboard UI overhaul",
+      description: "Prepares the dashboard visual-system pass before focused page variants expand it."
     },
     uiPhaseFocusedPages: {
       label: "Phase 7: Focused page variants",

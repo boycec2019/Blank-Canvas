@@ -53,6 +53,7 @@
       courseId: courseSelection.courseId,
       courseName: courseSelection.courseName,
       dueAt: normalizeDateTimeValue(input.dueAt),
+      completedAt: normalizeDateTimeValue(input.completedAt),
       createdAt,
       updatedAt,
       source: "custom"
@@ -123,6 +124,31 @@
     return nextRecords;
   }
 
+  async function toggleCustomAssignmentDone(id, options = {}) {
+    const records = await listCustomAssignments();
+    const index = records.findIndex((record) => record.id === id);
+    if (index === -1) {
+      throw new Error("Custom assignment not found.");
+    }
+
+    const currentRecord = records[index];
+    const completedAt = currentRecord.completedAt
+      ? null
+      : normalizeDateTimeValue(options.completedAt || options.now || new Date());
+    const nextRecord = normalizeCustomAssignment(
+      {
+        ...currentRecord,
+        completedAt,
+        id
+      },
+      options
+    );
+    const nextRecords = records.slice();
+    nextRecords[index] = nextRecord;
+    await writeCustomAssignments(nextRecords);
+    return nextRecord;
+  }
+
   function toPendingAssignment(record) {
     const normalized = normalizeCustomAssignment(record, {
       now: record.updatedAt || record.createdAt || new Date()
@@ -134,7 +160,8 @@
       courseId: normalized.courseId,
       courseName: normalized.courseName,
       dueAt: normalized.dueAt,
-      dueLabel: "Due",
+      dueLabel: normalized.completedAt ? "Done" : "Due",
+      completedAt: normalized.completedAt,
       source: "custom",
       url: ""
     };
@@ -217,6 +244,7 @@
     createCustomAssignment,
     updateCustomAssignment,
     deleteCustomAssignment,
+    toggleCustomAssignmentDone,
     toPendingAssignment,
     onChanged
   };

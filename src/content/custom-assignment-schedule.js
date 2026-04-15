@@ -99,7 +99,7 @@
     const dateButtonCopy = createElement("span", "blank-canvas__custom-modal-date-copy");
     const dateButtonLabel = createElement("span", "blank-canvas__custom-modal-date-label", "Select a due date");
     const dateButtonMeta = createElement("span", "blank-canvas__custom-modal-date-meta", "");
-    const dateButtonIcon = createElement("span", "blank-canvas__custom-modal-date-icon", "▾");
+    const dateButtonIcon = createElement("span", "blank-canvas__custom-modal-date-icon");
     dateButtonIcon.setAttribute("aria-hidden", "true");
     dateButtonCopy.append(dateButtonLabel, dateButtonMeta);
     dateButton.append(dateButtonCopy, dateButtonIcon);
@@ -174,6 +174,7 @@
     function updateDatePresentation() {
       dateButtonLabel.textContent = root.customAssignmentForm.formatDateButtonLabel(selectedDueDate);
       dateButtonMeta.textContent = "";
+      dateButton.dataset.placeholder = selectedDueDate ? "false" : "true";
     }
 
     function setCalendarOpen(nextValue) {

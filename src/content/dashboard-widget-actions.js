@@ -7,6 +7,22 @@
     }
   }
 
+  function getSettings() {
+    if (!root.storage || typeof root.storage.getSettings !== "function") {
+      return Promise.resolve({ ...root.defaults });
+    }
+
+    return root.storage.getSettings();
+  }
+
+  async function refreshDashboard() {
+    root.assignments.invalidate();
+    if (root.renderer && typeof root.renderer.render === "function") {
+      const settings = await getSettings();
+      root.renderer.render(settings);
+    }
+  }
+
   function openCustomAssignmentCreate() {
     if (!root.customAssignmentModal) {
       return;
@@ -37,6 +53,32 @@
     });
   }
 
+  function toggleCustomAssignmentDone(customAssignmentId) {
+    if (!root.customAssignmentForm) {
+      return Promise.resolve();
+    }
+
+    return root.customAssignmentForm
+      .markDoneRecord(customAssignmentId)
+      .then(refreshDashboard)
+      .catch((error) => {
+        logDashboardWarning("Custom assignment done toggle failed.", error);
+      });
+  }
+
+  function ignoreNativeAssignment(assignmentKey) {
+    if (!root.ignoredAssignments || !assignmentKey) {
+      return Promise.resolve();
+    }
+
+    return root.ignoredAssignments
+      .ignoreAssignmentKey(assignmentKey)
+      .then(refreshDashboard)
+      .catch((error) => {
+        logDashboardWarning("Native assignment ignore action failed.", error);
+      });
+  }
+
   function handleWidgetClick(event) {
     if (!(event.target instanceof Element)) {
       return;
@@ -63,12 +105,41 @@
       return;
     }
 
+    if (rowAction.getAttribute("data-action") === "toggle-custom-assignment-done") {
+      return toggleCustomAssignmentDone(customAssignmentId);
+    }
+
     if (rowAction.getAttribute("data-action") === "delete-custom-assignment") {
       deleteCustomAssignment(customAssignmentId);
     }
   }
 
+  function handleWidgetContextMenu(event) {
+    if (!(event.target instanceof Element)) {
+      return;
+    }
+
+    const row = event.target.closest(".blank-canvas__todo-item");
+    if (!row || row.dataset.source === "custom") {
+      return;
+    }
+
+    const assignmentKey = row.dataset.assignmentKey || "";
+    if (!assignmentKey) {
+      return;
+    }
+
+    event.preventDefault();
+    const confirmed = window.confirm("Hide this Canvas assignment from Blank Canvas?");
+    if (!confirmed) {
+      return;
+    }
+
+    return ignoreNativeAssignment(assignmentKey);
+  }
+
   root.dashboardWidgetActions = {
-    handleWidgetClick
+    handleWidgetClick,
+    handleWidgetContextMenu
   };
 })();

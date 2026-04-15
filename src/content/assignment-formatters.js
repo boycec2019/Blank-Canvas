@@ -4,7 +4,8 @@
     missing: 0,
     overdue: 1,
     late: 2,
-    pending: 3
+    pending: 3,
+    done: 4
   });
 
   function getStatusSeverity(statusTone) {

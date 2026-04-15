@@ -99,6 +99,7 @@ export async function collectHeaderSnapshot(page) {
 export async function collectDashboardTodoSnapshot(page) {
   return page.evaluate(() => {
     const widget = document.getElementById("blank-canvas-dashboard-todo");
+    const classesAnchor = document.getElementById("DashboardCard_Container");
     const rows = widget ? Array.from(widget.querySelectorAll(".blank-canvas__todo-item")) : [];
     const fallbackPattern = /^Course\s+\d{3,}$/i;
 
@@ -124,6 +125,7 @@ export async function collectDashboardTodoSnapshot(page) {
       fallbackCourseCount: widget ? Number(widget.dataset.fallbackCourseCount || 0) : 0,
       normalizedTitleCount: widget ? Number(widget.dataset.normalizedTitleCount || 0) : 0,
       hasLauncher: Boolean(widget && widget.querySelector(".blank-canvas__todo-create")),
+      summaryInsideWidget: Boolean(widget && widget.querySelector(".blank-canvas__today-strip")),
       customActionCount: widget ? widget.querySelectorAll(".blank-canvas__todo-action").length : 0,
       hasStructuredRows: Boolean(
         widget &&
@@ -141,7 +143,59 @@ export async function collectDashboardTodoSnapshot(page) {
         );
       }).length,
       fallbackRows: rowSummaries.filter((row) => fallbackPattern.test(row.courseText)),
+      widgetBeforeClasses: Boolean(
+        widget &&
+          classesAnchor &&
+          widget.compareDocumentPosition(classesAnchor) & Node.DOCUMENT_POSITION_FOLLOWING
+      ),
       rowSummaries
+    };
+  });
+}
+
+export async function collectDashboardLayoutSnapshot(page) {
+  return page.evaluate(() => {
+    const host = document.getElementById("blank-canvas-dashboard-sections");
+    const widget = document.getElementById("blank-canvas-dashboard-todo");
+    const classesAnchor = document.getElementById("DashboardCard_Container");
+    const hostRect = host ? host.getBoundingClientRect() : null;
+    const widgetRect = widget ? widget.getBoundingClientRect() : null;
+    const classesRect = classesAnchor ? classesAnchor.getBoundingClientRect() : null;
+    const title = document.querySelector("#dashboard h1, .ic-Dashboard-header h1, .ic-Dashboard-header__layout h1");
+    const titleRect = title ? title.getBoundingClientRect() : null;
+    const layoutMode = host ? host.dataset.layoutMode || "stacked" : "stacked";
+
+    return {
+      rendered: Boolean(host),
+      sectionOrder: host && host.dataset.sectionOrder
+        ? host.dataset.sectionOrder.split(",").filter(Boolean)
+        : [],
+      assignmentsMounted: Boolean(widget),
+      classesAnchorFound: Boolean(classesAnchor),
+      layoutMode,
+      leftColumnMounted: Boolean(widget && host && host.dataset.blankCanvasDashboardColumn === "left"),
+      rightColumnMounted: Boolean(
+        layoutMode === "split" &&
+          classesAnchor &&
+          classesAnchor.dataset.blankCanvasDashboardColumn === "right"
+      ),
+      classesInRightColumn: Boolean(
+        layoutMode === "split" &&
+          widgetRect &&
+          classesRect &&
+          classesRect.left > widgetRect.right - 40
+      ),
+      titleInLeftColumn: Boolean(
+        titleRect &&
+          hostRect &&
+          titleRect.left >= hostRect.left - 12 &&
+          titleRect.right <= hostRect.right + 40
+      ),
+      widgetBeforeClasses: Boolean(
+        widget &&
+          classesAnchor &&
+          widget.compareDocumentPosition(classesAnchor) & Node.DOCUMENT_POSITION_FOLLOWING
+      )
     };
   });
 }

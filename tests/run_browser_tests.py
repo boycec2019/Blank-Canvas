@@ -43,6 +43,7 @@ def main() -> int:
                 "--no-default-browser-check",
                 f"--user-data-dir={temp_dir}",
                 "--allow-file-access-from-files",
+                "--virtual-time-budget=30000",
                 "--dump-dom",
                 test_page.as_uri(),
             ]

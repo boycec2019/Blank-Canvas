@@ -173,8 +173,8 @@
 
       ${DASHBOARD_SHELL_PHASE_SELECTOR} .ic-DashboardLayout__Main,
       ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard {
-        width: min(980px, calc(100vw - 176px)) !important;
-        max-width: 980px !important;
+        width: min(1480px, calc(100vw - 160px)) !important;
+        max-width: 1480px !important;
         margin: 0 auto !important;
         padding: 52px 44px 80px !important;
         box-sizing: border-box !important;
@@ -182,8 +182,8 @@
 
       ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--hide-right-sidebar .ic-DashboardLayout__Main,
       ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--hide-right-sidebar #dashboard {
-        width: min(980px, calc(100vw - 176px)) !important;
-        max-width: 980px !important;
+        width: min(1480px, calc(100vw - 160px)) !important;
+        max-width: 1480px !important;
       }
 
       ${DASHBOARD_SHELL_PHASE_SELECTOR} #dashboard {
@@ -239,6 +239,25 @@
 
       ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container .ic-DashboardCard {
         min-height: 0 !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard footer,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard [role='contentinfo'],
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard .ic-app-footer,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard #footer,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard #footer-links {
+        display: none !important;
+      }
+
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard hr:has(+ footer),
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard hr:has(+ [role='contentinfo']),
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard hr:has(+ .ic-app-footer),
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard hr:has(+ #footer),
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard footer + hr,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard [role='contentinfo'] + hr,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard .ic-app-footer + hr,
+      ${DASHBOARD_SHELL_PHASE_SELECTOR}.blank-canvas--dashboard #footer + hr {
+        display: none !important;
       }
 
       ${DASHBOARD_SHELL_PHASE_SELECTOR} #DashboardCard_Container,
@@ -647,9 +666,13 @@ ${root.ui.buildTokenCss(settings)}
         ? editorialLeftRailCss()
         : ""}
 
-      ${root.dashboard ? root.dashboard.getStyles(settings) : ""}
-
-      ${root.customAssignmentModal ? root.customAssignmentModal.getStyles(settings) : ""}
+      ${root.featureRegistry
+        ? root.featureRegistry.getStyles(settings)
+        : [
+            root.uiPrimitives ? root.uiPrimitives.getStyles(settings) : "",
+            root.dashboard ? root.dashboard.getStyles(settings) : "",
+            root.customAssignmentModal ? root.customAssignmentModal.getStyles(settings) : ""
+          ].join("\n\n")}
     `;
   }
 

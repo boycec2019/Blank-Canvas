@@ -65,10 +65,16 @@
       });
 
     state.inFlight = request;
-    root.assignmentRefresh
-      .listCustomPendingAssignments(options)
-      .then((customItems) => {
-        const provisionalItems = root.assignmentRefresh.buildProvisionalFallback(context, customItems);
+    Promise.all([
+      root.assignmentRefresh.listCustomPendingAssignments(options),
+      root.ignoredAssignments ? root.ignoredAssignments.listIgnoredAssignmentKeys() : Promise.resolve([])
+    ])
+      .then(([customItems, ignoredKeys]) => {
+        const provisionalItems = root.assignmentRefresh.buildProvisionalFallback(
+          context,
+          customItems,
+          ignoredKeys
+        );
         root.assignmentStoreState.applyProvisionalFallback(state, provisionalItems, {
           ...context.options,
           courseNames: context.courseNames

@@ -15,13 +15,84 @@
   function getPageContext() {
     const normalizedPath = root.globalNav.normalizePath();
     const courseId = root.courseNavUtils.getCourseIdFromPath(normalizedPath);
+    const pageMatch = getPageMatch(normalizedPath, courseId);
 
     return {
       path: normalizedPath,
       isDashboard: normalizedPath === "/" || normalizedPath === "/dashboard",
       isCourse: Boolean(courseId),
+      pageType: pageMatch.pageType,
+      pageFamily: pageMatch.pageFamily,
+      pageRoutePattern: pageMatch.routePattern,
       courseId,
       globalNavKey: root.globalNav.getGlobalNavKeyFromPath(normalizedPath)
+    };
+  }
+
+  function getPageMatch(path, courseId) {
+    if (path === "/" || path === "/dashboard") {
+      return {
+        pageType: "dashboard",
+        pageFamily: "dashboard",
+        routePattern: "/dashboard"
+      };
+    }
+
+    if (path === "/calendar" || path.startsWith("/calendar/")) {
+      return {
+        pageType: "calendar",
+        pageFamily: "calendar",
+        routePattern: "/calendar"
+      };
+    }
+
+    if (path === "/conversations" || path.startsWith("/conversations/")) {
+      return {
+        pageType: "inbox",
+        pageFamily: "communication",
+        routePattern: "/conversations"
+      };
+    }
+
+    if (courseId) {
+      const coursePrefix = `/courses/${courseId}`;
+      if (path === coursePrefix) {
+        return {
+          pageType: "course-home",
+          pageFamily: "course",
+          routePattern: "/courses/:courseId"
+        };
+      }
+
+      if (path === `${coursePrefix}/assignments`) {
+        return {
+          pageType: "course-assignments",
+          pageFamily: "course",
+          routePattern: "/courses/:courseId/assignments"
+        };
+      }
+
+      if (path.startsWith(`${coursePrefix}/assignments/`)) {
+        return {
+          pageType: "course-assignment-detail",
+          pageFamily: "course",
+          routePattern: "/courses/:courseId/assignments/:assignmentId"
+        };
+      }
+
+      if (path === `${coursePrefix}/modules` || path.startsWith(`${coursePrefix}/modules/`)) {
+        return {
+          pageType: "course-modules",
+          pageFamily: "course",
+          routePattern: "/courses/:courseId/modules"
+        };
+      }
+    }
+
+    return {
+      pageType: "unknown-canvas",
+      pageFamily: courseId ? "course" : "unknown",
+      routePattern: ""
     };
   }
 
@@ -187,6 +258,7 @@
     findHiddenCourseNavTargets,
     findSecondaryNavItems,
     findDashboardTodoMount,
+    getPageMatch,
     getCourseNavLinkSelector,
     resolveCourseNavItemKey
   };

@@ -27,14 +27,17 @@
     const heading = createElement("h2", "", "Assignments");
     const count = createElement("p", "blank-canvas__todo-count");
     const headerActions = createElement("div", "blank-canvas__todo-header-actions");
-    const createButton = createElement("button", "blank-canvas__todo-create", "New custom");
+    const createButton = createElement("button", "blank-canvas__todo-create", "+");
     createButton.type = "button";
+    createButton.setAttribute("aria-label", "New custom assignment");
+    createButton.title = "New custom assignment";
     const content = createElement("div", "blank-canvas__todo-content");
 
     headerActions.append(count, createButton);
     header.append(heading, headerActions);
     widget.append(header, content);
     widget.addEventListener("click", root.dashboardWidgetActions.handleWidgetClick);
+    widget.addEventListener("contextmenu", root.dashboardWidgetActions.handleWidgetContextMenu);
 
     return widget;
   }
@@ -55,33 +58,8 @@
     };
   }
 
-  function ensureWidgetPlacement(widget, mount) {
-    if (!mount || !mount.container) {
-      return false;
-    }
-
-    const shouldInsertBeforeAnchor = Boolean(mount.anchor && mount.anchor !== widget);
-    const needsMove =
-      widget.parentElement !== mount.container ||
-      (shouldInsertBeforeAnchor && widget.nextSibling !== mount.anchor) ||
-      (!shouldInsertBeforeAnchor && mount.container.firstElementChild !== widget);
-
-    if (!needsMove) {
-      return true;
-    }
-
-    if (shouldInsertBeforeAnchor) {
-      mount.container.insertBefore(widget, mount.anchor);
-      return true;
-    }
-
-    mount.container.insertBefore(widget, mount.container.firstChild);
-    return true;
-  }
-
-  function renderItems(widget, snapshot) {
-    const items = snapshot.items || [];
-    const rowItems = root.assignmentRowModel.buildAssignmentRows(items, {
+  function renderItems(widget, snapshot, options = {}) {
+    const rowItems = options.rowItems || root.assignmentRowModel.buildAssignmentRows(snapshot.items || [], {
       courseNames: root.assignmentUtils.buildCourseNameMap(document)
     });
 
@@ -91,20 +69,21 @@
     });
   }
 
-  function getSnapshot() {
-    const widget = document.getElementById(root.dashboardStyles.WIDGET_ID);
+  function getSnapshot(widget = document.getElementById(root.dashboardStyles.WIDGET_ID)) {
+    const itemCount = widget ? Number(widget.dataset.itemCount || 0) : 0;
+    const customItemCount = widget ? Number(widget.dataset.customItemCount || 0) : 0;
 
     return {
       rendered: Boolean(widget),
-      itemCount: widget ? Number(widget.dataset.itemCount || 0) : 0,
+      itemCount,
       layoutVariant: widget ? widget.dataset.layoutVariant || "classic" : "none",
       rowVariant: widget ? widget.dataset.rowVariant || "legacy" : "none",
       fallbackCourseCount: widget ? Number(widget.dataset.fallbackCourseCount || 0) : 0,
       normalizedTitleCount: widget ? Number(widget.dataset.normalizedTitleCount || 0) : 0,
       source: widget ? widget.dataset.assignmentSource || "dom" : "none",
       status: widget ? widget.dataset.assignmentStatus || "idle" : "idle",
-      customItemCount: widget ? Number(widget.dataset.customItemCount || 0) : 0,
-      hasCustomItems: widget ? Number(widget.dataset.customItemCount || 0) > 0 : false
+      customItemCount,
+      hasCustomItems: customItemCount > 0
     };
   }
 
@@ -117,7 +96,6 @@
 
   root.dashboardView = {
     createWidget,
-    ensureWidgetPlacement,
     formatAssignmentCount,
     getSnapshot,
     renderItems,

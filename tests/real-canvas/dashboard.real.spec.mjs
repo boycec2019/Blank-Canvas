@@ -5,6 +5,7 @@ import {
   openCustomAssignmentModal
 } from "./helpers/custom-assignment-modal.mjs";
 import {
+  collectDashboardLayoutSnapshot,
   collectDashboardTodoSnapshot,
   collectHeaderSnapshot,
   collectRailSnapshot
@@ -60,8 +61,50 @@ test.describe("Real Canvas dashboard smoke", () => {
     expect(snapshot.itemCount).toBeGreaterThan(0);
     expect(snapshot.hasLauncher).toBe(true);
     expect(snapshot.hasStructuredRows).toBe(true);
+    expect(snapshot.summaryInsideWidget).toBe(false);
+    expect(snapshot.widgetBeforeClasses).toBe(true);
     expect(snapshot.duplicateHeadlineCount).toBe(0);
     expect(snapshot.fallbackRows).toEqual([]);
+  });
+
+  test("uses the compact two-column dashboard layout on desktop widths", async ({
+    page,
+    canvasBaseURL
+  }) => {
+    await page.goto(resolveCanvasUrl(canvasBaseURL, REAL_CANVAS_ROUTES.dashboard), {
+      waitUntil: "networkidle"
+    });
+    await assertCanvasAuthenticated(page, canvasBaseURL);
+
+    const layoutSnapshot = await collectDashboardLayoutSnapshot(page);
+    expect(layoutSnapshot.rendered).toBe(true);
+    expect(layoutSnapshot.sectionOrder).toEqual(["assignments", "classes-anchor"]);
+    expect(layoutSnapshot.layoutMode).toBe("split");
+    expect(layoutSnapshot.leftColumnMounted).toBe(true);
+    expect(layoutSnapshot.rightColumnMounted).toBe(true);
+    expect(layoutSnapshot.classesInRightColumn).toBe(true);
+    expect(layoutSnapshot.titleInLeftColumn).toBe(true);
+    expect(layoutSnapshot.widgetBeforeClasses).toBe(true);
+  });
+
+  test("returns to a stacked dashboard layout on narrower widths", async ({
+    page,
+    canvasBaseURL
+  }) => {
+    await page.setViewportSize({
+      width: 1024,
+      height: 1200
+    });
+    await page.goto(resolveCanvasUrl(canvasBaseURL, REAL_CANVAS_ROUTES.dashboard), {
+      waitUntil: "networkidle"
+    });
+    await assertCanvasAuthenticated(page, canvasBaseURL);
+
+    const layoutSnapshot = await collectDashboardLayoutSnapshot(page);
+    expect(layoutSnapshot.rendered).toBe(true);
+    expect(layoutSnapshot.layoutMode).toBe("stacked");
+    expect(layoutSnapshot.classesInRightColumn).toBe(false);
+    expect(layoutSnapshot.rightColumnMounted).toBe(false);
   });
 
   test("opens the custom-assignment modal with structured schedule controls", async ({
