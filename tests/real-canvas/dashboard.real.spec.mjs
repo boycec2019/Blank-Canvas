@@ -12,7 +12,7 @@ import {
 } from "./helpers/canvas-probes.mjs";
 import { REAL_CANVAS_ROUTES, resolveCanvasUrl } from "./helpers/routes.mjs";
 
-const EDITORIAL_RAIL_SURFACE = "rgba(58, 76, 85, 0.98)";
+const EDITORIAL_RAIL_SURFACE = "rgb(255, 250, 247)";
 
 test.describe("Real Canvas dashboard smoke", () => {
   test("keeps the dashboard header title while hiding header chrome", async ({ page, canvasBaseURL }) => {

@@ -242,6 +242,8 @@ Done when:
 
 Goal: finalize the dashboard visual language before carrying it to other Canvas pages.
 
+Status: implemented.
+
 What this phase means:
 
 - turn the dashboard into the reference implementation for the extension's visual system
@@ -259,6 +261,48 @@ Implementation notes:
 - This phase should not introduce new product surfaces.
 - Dashboard-specific layout rules should stay separate from reusable component primitives.
 - The output should be easy for Phase 7 to consume without copying dashboard-only CSS.
+
+Delivered in this phase:
+
+- Added a stronger design-token layer for surfaces, controls, spacing, shadows, typography, carets, and focus treatments.
+- Expanded shared UI primitives so dashboard surfaces, modal controls, rounded actions, compact popovers, and calendar styling all pull from the same system.
+- Refactored dashboard mounting into a cleaner two-block composition:
+  - left: dashboard title and assignments
+  - right: classes
+- Finalized the current dashboard visual direction around:
+  - white field with soft shadow gradients
+  - black editorial typography
+  - restrained borders and flatter surfaces
+  - reduced chrome and quieter utility controls
+- Reworked the assignments widget shell into a more deliberate block:
+  - stronger title treatment
+  - calmer count and create action styling
+  - cleaner row spacing and divider rhythm
+  - support for completed-state styling without hiding rows
+- Polished the class-card treatment into the current minimalist pill system:
+  - preserved native Canvas course colors as live accents
+  - extracted stable accent-color resolution from Canvas DOM
+  - added hover/focus color-swap behavior and class-pill motion treatment
+  - tightened title truncation and left-aligned text-lane behavior for long class names
+  - hid secondary class-card metadata in the dashboard block so the title remains the primary signal
+- Hardened the custom-assignment modal to match the dashboard system:
+  - cleaner field spacing and typography
+  - rounded controls and action buttons
+  - polished select/date/time controls and caret treatments
+  - compact overlay calendar behavior instead of oversized in-flow calendar rendering
+- Extended diagnostics so the dashboard reports:
+  - active Phase 6.5 visual mode
+  - two-block layout state
+  - primitive adoption state
+  - mounted dashboard sections
+  - horizontal-overflow readiness
+- Expanded fixture/browser coverage around:
+  - design-token availability
+  - primitive CSS presence
+  - dashboard layout mode and section order
+  - class-card accent syncing
+  - hover/focus-safe class styling
+  - assignment-row motion and completed-state behavior
 
 Done when:
 
@@ -365,7 +409,7 @@ Done when:
 - Phase 4 is implemented.
 - Phase 5 is implemented.
 - Phase 6 is planned/deferred after rollback.
-- Phase 6.5 is planned.
+- Phase 6.5 is implemented.
 - Phases 7-9 are planned.
 
 ## Delivered feature work outside the phase ladder

@@ -1,16 +1,18 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
-
-  function createElement(tagName, className, textContent) {
-    const element = document.createElement(tagName);
-    if (className) {
-      element.className = className;
-    }
-    if (textContent !== undefined) {
-      element.textContent = textContent;
-    }
-    return element;
-  }
+  const createElement =
+    root.dom && typeof root.dom.createElement === "function"
+      ? root.dom.createElement
+      : (tagName, className, textContent) => {
+          const element = document.createElement(tagName);
+          if (className) {
+            element.className = className;
+          }
+          if (textContent !== undefined) {
+            element.textContent = textContent;
+          }
+          return element;
+        };
 
   function formatAssignmentCount(count) {
     return `${count} Assignment${count === 1 ? "" : "s"}`;

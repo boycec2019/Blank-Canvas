@@ -50,6 +50,14 @@
     return root.assignmentFormatting.mergePendingAssignments([...primaryItems, ...customItems], options);
   }
 
+  function applyCompletedAssignments(items = [], completedStates = []) {
+    if (!root.completedAssignments) {
+      return items;
+    }
+
+    return root.completedAssignments.applyCompletionState(items, completedStates);
+  }
+
   function createRefreshContext(options = {}, scope = document) {
     const courseNames = buildCourseNames(scope);
     return {
@@ -60,16 +68,20 @@
   }
 
   async function fetchMergedAssignments(context) {
-    const [apiItems, customItems, ignoredKeys] = await Promise.all([
+    const [apiItems, customItems, ignoredKeys, completedStates] = await Promise.all([
       root.assignmentApi.fetchPendingAssignmentsFromApi({
         ...context.options,
         courseNames: context.courseNames
       }),
       listCustomPendingAssignments(context.options),
-      root.ignoredAssignments ? root.ignoredAssignments.listIgnoredAssignmentKeys() : Promise.resolve([])
+      root.ignoredAssignments ? root.ignoredAssignments.listIgnoredAssignmentKeys() : Promise.resolve([]),
+      root.completedAssignments ? root.completedAssignments.listCompletedAssignmentStates() : Promise.resolve([])
     ]);
-    const visibleApiItems = filterIgnoredAssignments(apiItems, ignoredKeys);
-    const visibleDomFallback = filterIgnoredAssignments(context.domFallback, ignoredKeys);
+    const visibleApiItems = applyCompletedAssignments(filterIgnoredAssignments(apiItems, ignoredKeys), completedStates);
+    const visibleDomFallback = applyCompletedAssignments(
+      filterIgnoredAssignments(context.domFallback, ignoredKeys),
+      completedStates
+    );
 
     return {
       apiItems: visibleApiItems,
@@ -86,11 +98,15 @@
   }
 
   async function fetchFallbackWithCustom(context) {
-    const [customItems, ignoredKeys] = await Promise.all([
+    const [customItems, ignoredKeys, completedStates] = await Promise.all([
       listCustomPendingAssignments(context.options),
-      root.ignoredAssignments ? root.ignoredAssignments.listIgnoredAssignmentKeys() : Promise.resolve([])
+      root.ignoredAssignments ? root.ignoredAssignments.listIgnoredAssignmentKeys() : Promise.resolve([]),
+      root.completedAssignments ? root.completedAssignments.listCompletedAssignmentStates() : Promise.resolve([])
     ]);
-    const visibleDomFallback = filterIgnoredAssignments(context.domFallback, ignoredKeys);
+    const visibleDomFallback = applyCompletedAssignments(
+      filterIgnoredAssignments(context.domFallback, ignoredKeys),
+      completedStates
+    );
     return {
       customItems,
       mergedFallback: mergePendingAssignments(visibleDomFallback, customItems, {
@@ -100,11 +116,15 @@
     };
   }
 
-  function buildProvisionalFallback(context, customItems = [], ignoredKeys = []) {
-    return mergePendingAssignments(filterIgnoredAssignments(context.domFallback, ignoredKeys), customItems, {
+  function buildProvisionalFallback(context, customItems = [], ignoredKeys = [], completedStates = []) {
+    return mergePendingAssignments(
+      applyCompletedAssignments(filterIgnoredAssignments(context.domFallback, ignoredKeys), completedStates),
+      customItems,
+      {
       ...context.options,
       courseNames: context.courseNames
-    });
+      }
+    );
   }
 
   root.assignmentRefresh = {
@@ -116,6 +136,7 @@
     filterIgnoredAssignments,
     getDomFallback,
     listCustomPendingAssignments,
-    mergePendingAssignments
+    mergePendingAssignments,
+    applyCompletedAssignments
   };
 })();

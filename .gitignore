@@ -1,9 +1,11 @@
 Thumbs.db
 .DS_Store
+node_modules/
 
 # Local test artifacts
 tests/tmp*/
 tests/real-canvas/.auth/
 tests/real-canvas/.pw-user-data/
+tests/real-canvas/.tmp-footer-probe*/
 playwright-report/
 test-results/

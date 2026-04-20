@@ -1,17 +1,19 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
   const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-  function createElement(tagName, className, textContent) {
-    const element = document.createElement(tagName);
-    if (className) {
-      element.className = className;
-    }
-    if (textContent !== undefined) {
-      element.textContent = textContent;
-    }
-    return element;
-  }
+  const createElement =
+    root.dom && typeof root.dom.createElement === "function"
+      ? root.dom.createElement
+      : (tagName, className, textContent) => {
+          const element = document.createElement(tagName);
+          if (className) {
+            element.className = className;
+          }
+          if (textContent !== undefined) {
+            element.textContent = textContent;
+          }
+          return element;
+        };
 
   function formatDateKey(date) {
     return [

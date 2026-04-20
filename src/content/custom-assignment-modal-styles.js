@@ -1,5 +1,7 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
+  const DASHBOARD_UI_OVERHAUL_SELECTOR =
+    "html.blank-canvas--layout-editorial.blank-canvas--phase-dashboard-ui-overhaul";
 
   function getStyles(modalId) {
     return `
@@ -23,7 +25,7 @@
         position: absolute;
         inset: 0;
         border: none;
-        background: rgba(28, 24, 20, 0.52);
+        background: var(--blank-canvas-color-overlay);
         cursor: pointer;
       }
 
@@ -34,10 +36,10 @@
         padding: 24px;
         max-height: calc(100vh - 32px);
         overflow: visible;
-        border-radius: 28px;
+        border-radius: var(--blank-canvas-modal-radius);
         border: 1px solid var(--blank-canvas-border-subtle);
-        background: var(--blank-canvas-color-surface-elevated);
-        box-shadow: 0 24px 60px rgba(32, 27, 21, 0.18);
+        background: var(--blank-canvas-surface-modal);
+        box-shadow: var(--blank-canvas-shadow-modal);
         color: var(--blank-canvas-color-text);
       }
 
@@ -70,9 +72,9 @@
       #${modalId} .blank-canvas__custom-modal-close,
       #${modalId} .blank-canvas__custom-modal-cancel {
         border: 1px solid var(--blank-canvas-border-subtle);
-        background: rgba(255, 255, 255, 0.72);
+        background: var(--blank-canvas-surface-button);
         color: var(--blank-canvas-color-text);
-        border-radius: 18px;
+        border-radius: var(--blank-canvas-button-radius);
       }
 
       #${modalId} .blank-canvas__custom-modal-close,
@@ -81,7 +83,7 @@
         min-height: 44px;
         padding: 10px 16px;
         font: inherit;
-        border-radius: 18px;
+        border-radius: var(--blank-canvas-button-radius);
       }
 
       #${modalId} .blank-canvas__custom-modal-save {
@@ -116,20 +118,20 @@
       #${modalId} input[type='text'] {
         width: 100%;
         box-sizing: border-box;
-        border: 1px solid rgba(48, 40, 31, 0.12);
-        border-radius: 18px;
-        min-height: 54px;
-        padding: 13px 16px;
+        border: 1px solid var(--blank-canvas-control-border);
+        border-radius: var(--blank-canvas-control-radius);
+        min-height: var(--blank-canvas-control-height);
+        padding: var(--blank-canvas-control-padding-y) var(--blank-canvas-control-padding-x);
         font: inherit;
-        font-size: 0.96rem;
-        line-height: 1.25;
+        font-size: var(--blank-canvas-font-size-md);
+        line-height: var(--blank-canvas-line-height-base);
         color: var(--blank-canvas-color-text);
-        background: rgba(255, 255, 255, 0.82);
+        background: var(--blank-canvas-surface-control);
         transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
       }
 
       #${modalId} input[type='text']::placeholder {
-        color: rgba(48, 40, 31, 0.42);
+        color: var(--blank-canvas-color-placeholder);
       }
 
       #${modalId} select:focus,
@@ -138,8 +140,8 @@
       #${modalId} .blank-canvas__custom-modal-calendar-nav:focus-visible,
       #${modalId} .blank-canvas__custom-modal-day:focus-visible {
         outline: none;
-        border-color: rgba(53, 102, 93, 0.45);
-        box-shadow: 0 0 0 3px rgba(53, 102, 93, 0.12);
+        border-color: var(--blank-canvas-control-focus-border);
+        box-shadow: 0 0 0 3px var(--blank-canvas-control-focus-ring);
       }
 
       #${modalId} select {
@@ -169,7 +171,7 @@
         justify-content: center;
         width: 18px;
         height: 18px;
-        color: var(--blank-canvas-color-muted);
+        color: var(--blank-canvas-color-caret);
         pointer-events: none;
         transform: translateY(-50%);
       }
@@ -177,16 +179,16 @@
       #${modalId} .blank-canvas__custom-modal-select-caret::before {
         content: "";
         display: block;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 6px solid currentColor;
+        border-left: calc(var(--blank-canvas-caret-size) - 1px) solid transparent;
+        border-right: calc(var(--blank-canvas-caret-size) - 1px) solid transparent;
+        border-top: var(--blank-canvas-caret-size) solid currentColor;
         transform: translateY(-3px);
       }
 
       #${modalId} .blank-canvas__custom-modal-meridiem {
         background-image:
-          linear-gradient(45deg, transparent 50%, rgb(109, 101, 93) 50%),
-          linear-gradient(135deg, rgb(109, 101, 93) 50%, transparent 50%);
+          linear-gradient(45deg, transparent 50%, var(--blank-canvas-color-caret) 50%),
+          linear-gradient(135deg, var(--blank-canvas-color-caret) 50%, transparent 50%);
         background-position:
           calc(100% - 14px) 50%,
           calc(100% - 10px) 50%;
@@ -195,11 +197,11 @@
       }
 
       #${modalId} select:required:invalid {
-        color: rgba(48, 40, 31, 0.42);
+        color: var(--blank-canvas-color-placeholder);
       }
 
       #${modalId}-course[data-placeholder='true'] {
-        color: rgba(48, 40, 31, 0.42) !important;
+        color: var(--blank-canvas-color-placeholder) !important;
       }
 
       #${modalId} select option {
@@ -235,11 +237,11 @@
         justify-content: space-between;
         gap: 10px;
         width: 100%;
-        min-height: 54px;
+        min-height: var(--blank-canvas-control-height);
         padding: 12px 16px;
-        border: 1px solid rgba(48, 40, 31, 0.12);
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid var(--blank-canvas-control-border);
+        border-radius: var(--blank-canvas-control-radius);
+        background: var(--blank-canvas-surface-control);
         color: var(--blank-canvas-color-text);
         text-align: left;
       }
@@ -252,14 +254,14 @@
 
       #${modalId} .blank-canvas__custom-modal-date-trigger .blank-canvas__custom-modal-date-label {
         color: var(--blank-canvas-color-text);
-        font-size: 0.96rem;
+        font-size: var(--blank-canvas-font-size-md);
         font-weight: 400;
-        line-height: 1.25;
+        line-height: var(--blank-canvas-line-height-base);
       }
 
       #${modalId} .blank-canvas__custom-modal-date-trigger[data-placeholder='true']
         .blank-canvas__custom-modal-date-label {
-        color: rgba(48, 40, 31, 0.42);
+        color: var(--blank-canvas-color-placeholder);
       }
 
       #${modalId} .blank-canvas__custom-modal-date-meta {
@@ -270,7 +272,7 @@
         flex: 0 0 auto;
         width: 14px;
         height: 14px;
-        color: rgb(109, 101, 93);
+        color: var(--blank-canvas-color-caret);
         font-size: 0;
         line-height: 0;
         background-image:
@@ -291,11 +293,11 @@
         width: min(312px, 100%);
         box-sizing: border-box;
         padding: 10px;
-        border: 1px solid rgba(48, 40, 31, 0.1);
-        border-radius: 18px;
-        background: #ffffff;
+        border: 1px solid var(--blank-canvas-border-subtle);
+        border-radius: var(--blank-canvas-popover-radius);
+        background: var(--blank-canvas-surface-popover);
         color: var(--blank-canvas-color-text);
-        box-shadow: 0 16px 38px rgba(32, 27, 21, 0.16);
+        box-shadow: var(--blank-canvas-shadow-popover);
       }
 
       #${modalId} .blank-canvas__custom-modal-calendar-header {
@@ -395,12 +397,12 @@
       }
 
       #${modalId} .blank-canvas__custom-modal-time-field input[type='text'] {
-        min-height: 54px;
+        min-height: var(--blank-canvas-control-height);
         color: var(--blank-canvas-color-text);
         text-align: center;
-        font-size: 0.96rem;
+        font-size: var(--blank-canvas-font-size-md);
         font-weight: 400;
-        line-height: 1.25;
+        line-height: var(--blank-canvas-line-height-base);
         padding: 12px 10px;
       }
 
@@ -410,23 +412,23 @@
         -moz-appearance: none;
         display: inline-flex;
         align-items: center;
-        min-height: 54px;
+        min-height: var(--blank-canvas-control-height);
         min-width: 92px;
-        border: 1px solid rgba(48, 40, 31, 0.12);
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid var(--blank-canvas-control-border);
+        border-radius: var(--blank-canvas-control-radius);
+        background: var(--blank-canvas-surface-control);
         align-self: stretch;
         color: var(--blank-canvas-color-text);
         font: inherit;
-        font-size: 0.96rem;
+        font-size: var(--blank-canvas-font-size-md);
         font-weight: 400;
-        line-height: 1.25;
+        line-height: var(--blank-canvas-line-height-base);
         padding: 0 29px 0 20px;
         text-align: left;
         text-align-last: left;
         background-image:
-          linear-gradient(45deg, transparent 50%, rgb(109, 101, 93) 50%),
-          linear-gradient(135deg, rgb(109, 101, 93) 50%, transparent 50%);
+          linear-gradient(45deg, transparent 50%, var(--blank-canvas-color-caret) 50%),
+          linear-gradient(135deg, var(--blank-canvas-color-caret) 50%, transparent 50%);
         background-position:
           calc(100% - 14px) 50%,
           calc(100% - 10px) 50%;
@@ -442,7 +444,7 @@
         position: relative;
         display: block;
         align-self: stretch;
-        height: 54px;
+        height: var(--blank-canvas-control-height);
         width: 18px;
         color: var(--blank-canvas-color-muted);
         font-size: 0;
@@ -456,7 +458,7 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        font-size: 0.96rem;
+        font-size: var(--blank-canvas-font-size-md);
         font-weight: 400;
         line-height: 1;
         transform: translate(-50%, -50%);
@@ -504,6 +506,48 @@
           min-height: 28px;
           font-size: 0.84rem;
         }
+      }
+
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} .blank-canvas__custom-modal-dialog {
+        border-color: var(--blank-canvas-border-subtle);
+        background: var(--blank-canvas-surface-modal);
+        color: var(--blank-canvas-color-text);
+        box-shadow: var(--blank-canvas-shadow-modal);
+      }
+
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} h3 {
+        color: var(--blank-canvas-color-text);
+        font-family: var(--blank-canvas-font-body);
+        font-size: clamp(1.2rem, 1.9vw, 1.45rem);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        line-height: 1.1;
+      }
+
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} .blank-canvas__custom-modal-field strong {
+        color: var(--blank-canvas-color-text);
+      }
+
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} select,
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} input[type='text'],
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} .blank-canvas__custom-modal-date-trigger,
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} .blank-canvas__custom-modal-meridiem {
+        border-color: var(--blank-canvas-control-border);
+        background: var(--blank-canvas-surface-control);
+        color: var(--blank-canvas-color-text);
+      }
+
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} .blank-canvas__custom-modal-close,
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} .blank-canvas__custom-modal-save,
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} .blank-canvas__custom-modal-cancel {
+        background: transparent;
+        border-color: var(--blank-canvas-border-subtle);
+        color: var(--blank-canvas-color-text);
+      }
+
+      ${DASHBOARD_UI_OVERHAUL_SELECTOR} #${modalId} .blank-canvas__custom-modal-calendar {
+        background: var(--blank-canvas-surface-popover);
+        border-color: var(--blank-canvas-border-subtle);
       }
     `;
   }

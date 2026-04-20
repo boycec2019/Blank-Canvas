@@ -3,7 +3,7 @@ import { assertCanvasAuthenticated } from "./helpers/auth-guards.mjs";
 import { collectRailSnapshot } from "./helpers/canvas-probes.mjs";
 import { REAL_CANVAS_ROUTES, resolveCanvasUrl } from "./helpers/routes.mjs";
 
-const EDITORIAL_RAIL_SURFACE = "rgba(58, 76, 85, 0.98)";
+const EDITORIAL_RAIL_SURFACE = "rgb(255, 250, 247)";
 
 const SCENARIOS = [
   {

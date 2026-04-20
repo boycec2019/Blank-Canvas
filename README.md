@@ -2,6 +2,20 @@
 
 Blank Canvas is a Chrome extension that reduces clutter inside Canvas with a minimalist, student-friendly dashboard.
 
+## React scaffold
+
+React is scaffolded for extension-owned UI, but no live surfaces have been migrated yet.
+
+The bridge source lives in [src/react/bridge.js](src/react/bridge.js) and the bundled runtime loaded by the extension is generated at [src/generated/react-bridge.js](src/generated/react-bridge.js).
+
+Rebuild the bundled bridge with:
+
+```powershell
+cmd /c npm run build:react
+```
+
+The current bridge exposes `BlankCanvas.react` for future dashboard/modal migrations while leaving the existing Canvas scraping and DOM patching code in plain JavaScript.
+
 ## Testing
 
 Run the browser fixture suite with:

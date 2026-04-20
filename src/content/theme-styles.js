@@ -12,9 +12,8 @@
   function editorialTypographyResetCss() {
     return `
       ${EDITORIAL_PHASE_SELECTOR} body {
-        background:
-          radial-gradient(circle at top left, rgba(47, 93, 80, 0.05), transparent 22%),
-          linear-gradient(180deg, var(--blank-canvas-color-bg) 0%, #f8f3eb 100%) !important;
+        background: var(--blank-canvas-page-background) !important;
+        background-attachment: fixed !important;
         color: var(--blank-canvas-color-text) !important;
       }
 
@@ -312,9 +311,13 @@
   }
 
   function editorialLeftRailCss() {
-    const railSurface = "rgba(58, 76, 85, 0.98)";
-    const railSelectedSurface = "rgba(255, 248, 240, 0.028)";
-    const railInk = "rgba(247, 240, 230, 0.88)";
+    const railSurface = "#fffaf7";
+    const railBorder = "rgba(18, 60, 47, 0.12)";
+    const railHoverSurface = "rgba(18, 60, 47, 0.055)";
+    const railSelectedSurface = "rgba(18, 60, 47, 0.095)";
+    const railInk = "rgba(18, 60, 47, 0.66)";
+    const railSelectedInk = railInk;
+    const railMarker = "rgba(18, 60, 47, 0.82)";
     const routeSelectedNavSelectors = root.globalNav.ROUTE_KEYS
       .filter((routeKey) => routeKey !== "dashboard")
       .map((routeKey) => {
@@ -363,6 +366,29 @@
         outline: none !important;
       }
 
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header {
+        border-right: 1px solid ${railBorder} !important;
+        color: ${railInk} !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list {
+        display: grid !important;
+        gap: 6px !important;
+        align-content: start !important;
+        padding: 10px 0 !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu li,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+      }
+
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item,
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container,
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container,
@@ -376,6 +402,24 @@
         border-color: transparent !important;
         outline: none !important;
         position: relative !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item > a,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item > button,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        min-width: 44px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        border-radius: 14px !important;
+        box-sizing: border-box !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu a,
@@ -395,6 +439,7 @@
         opacity: 0.88 !important;
         border: none !important;
         outline: none !important;
+        text-decoration: none !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu a svg,
@@ -407,6 +452,13 @@
         stroke: currentColor !important;
         filter: none !important;
         opacity: 0.88 !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu button svg,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link svg {
+        width: 22px !important;
+        height: 22px !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item__text,
@@ -446,10 +498,11 @@
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item > button:focus-visible,
       ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item a:hover,
       ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item a:focus-visible {
-        background: ${railSelectedSurface} !important;
-        background-color: ${railSelectedSurface} !important;
+        background: ${railHoverSurface} !important;
+        background-color: ${railHoverSurface} !important;
         background-image: none !important;
         box-shadow: none !important;
+        border-radius: 14px !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active,
@@ -459,8 +512,8 @@
         background: ${railSelectedSurface} !important;
         background-color: ${railSelectedSurface} !important;
         background-image: none !important;
-        border-radius: 0 !important;
-        border-left: 2px solid rgba(255, 206, 72, 0.68) !important;
+        border-radius: 14px !important;
+        border-left: 2px solid ${railMarker} !important;
         box-shadow: none !important;
         outline: none !important;
       }
@@ -476,7 +529,7 @@
         background-color: transparent !important;
         background-image: none !important;
         box-shadow: none !important;
-        border-radius: 0 !important;
+        border-radius: 14px !important;
         filter: none !important;
       }
 
@@ -504,9 +557,9 @@
       ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item--active .ic-app-header__menu-list-link span,
       ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link[aria-current='page'],
       ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link[aria-current='page'] span {
-        color: ${railInk} !important;
+        color: ${railSelectedInk} !important;
         filter: none !important;
-        opacity: 0.88 !important;
+        opacity: 1 !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active svg,
@@ -519,48 +572,51 @@
         fill: currentColor !important;
         stroke: currentColor !important;
         filter: none !important;
-        opacity: 0.88 !important;
+        opacity: 1 !important;
       }
 
       ${routeSelectedNavSelectors} {
-        background: ${railSurface} !important;
-        background-color: ${railSurface} !important;
+        background: ${railSelectedSurface} !important;
+        background-color: ${railSelectedSurface} !important;
         background-image: none !important;
-        border-left: 2px solid rgba(255, 206, 72, 0.68) !important;
-        border-radius: 0 !important;
+        border-left: 2px solid ${railMarker} !important;
+        border-radius: 14px !important;
         box-shadow: none !important;
       }
 
       ${routeSelectedSurfaceSelectors} {
-        background: ${railSurface} !important;
-        background-color: ${railSurface} !important;
+        background: ${railSelectedSurface} !important;
+        background-color: ${railSelectedSurface} !important;
         background-image: linear-gradient(0deg, ${railSelectedSurface}, ${railSelectedSurface}) !important;
+        border-radius: 14px !important;
         box-shadow: none !important;
       }
 
       ${routeSelectedInkSelectors} {
-        color: ${railInk} !important;
+        color: ${railSelectedInk} !important;
         fill: currentColor !important;
         stroke: currentColor !important;
         filter: none !important;
-        opacity: 0.88 !important;
+        opacity: 1 !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] > div.menu-item-icon-container,
       ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'].active > div.menu-item-icon-container,
       ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container {
-        background: ${railSurface} !important;
-        background-color: ${railSurface} !important;
+        background: ${railSelectedSurface} !important;
+        background-color: ${railSelectedSurface} !important;
         background-image: linear-gradient(0deg, ${railSelectedSurface}, ${railSelectedSurface}) !important;
         border-left: none !important;
+        border-radius: 14px !important;
         box-shadow: none !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button {
-        background: ${railSurface} !important;
-        background-color: ${railSurface} !important;
+        background: ${railSelectedSurface} !important;
+        background-color: ${railSelectedSurface} !important;
         background-image: linear-gradient(0deg, ${railSelectedSurface}, ${railSelectedSurface}) !important;
-        border-left: 2px solid rgba(255, 206, 72, 0.68) !important;
+        border-left: 2px solid ${railMarker} !important;
+        border-radius: 14px !important;
         box-shadow: none !important;
       }
 
@@ -586,11 +642,11 @@
       ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container *,
       ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container svg,
       ${LEFT_RAIL_PHASE_SELECTOR} #menu a[id^='global_nav_'][aria-current='page'] > div.menu-item-icon-container svg * {
-        color: ${railInk} !important;
+        color: ${railSelectedInk} !important;
         fill: currentColor !important;
         stroke: currentColor !important;
         filter: none !important;
-        opacity: 0.88 !important;
+        opacity: 1 !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__logomark-container,
@@ -673,6 +729,35 @@ ${root.ui.buildTokenCss(settings)}
             root.dashboard ? root.dashboard.getStyles(settings) : "",
             root.customAssignmentModal ? root.customAssignmentModal.getStyles(settings) : ""
           ].join("\n\n")}
+
+      .blank-canvas--managed-hide {
+        display: none !important;
+      }
+
+      html #menu .blank-canvas--managed-hide,
+      html #menu li.blank-canvas--managed-hide,
+      html #menu a.blank-canvas--managed-hide,
+      html #menu button.blank-canvas--managed-hide,
+      html .ic-app-header .blank-canvas--managed-hide,
+      html .ic-app-header li.blank-canvas--managed-hide,
+      html .ic-app-header a.blank-canvas--managed-hide,
+      html .ic-app-header button.blank-canvas--managed-hide,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .blank-canvas--managed-hide,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu li.blank-canvas--managed-hide,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu a.blank-canvas--managed-hide,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu button.blank-canvas--managed-hide,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header .blank-canvas--managed-hide,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header li.blank-canvas--managed-hide,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header a.blank-canvas--managed-hide,
+      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header button.blank-canvas--managed-hide {
+        display: none !important;
+      }
+
+      .blank-canvas--preview-match {
+        outline: 2px dashed #d97706 !important;
+        outline-offset: 4px !important;
+        background: rgba(217, 119, 6, 0.08) !important;
+      }
     `;
   }
 

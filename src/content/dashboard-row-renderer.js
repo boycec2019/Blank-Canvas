@@ -1,5 +1,18 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
+  const createElement =
+    root.dom && typeof root.dom.createElement === "function"
+      ? root.dom.createElement
+      : (tagName, className, textContent) => {
+          const element = document.createElement(tagName);
+          if (className) {
+            element.className = className;
+          }
+          if (textContent !== undefined) {
+            element.textContent = textContent;
+          }
+          return element;
+        };
 
   function buildSignature(items) {
     return items
@@ -17,15 +30,8 @@
       .join("||");
   }
 
-  function createElement(tagName, className, textContent) {
-    const element = document.createElement(tagName);
-    if (className) {
-      element.className = className;
-    }
-    if (textContent !== undefined) {
-      element.textContent = textContent;
-    }
-    return element;
+  function getAssignmentKey(item) {
+    return root.assignmentCourseResolver ? root.assignmentCourseResolver.getAssignmentKey(item) : "";
   }
 
   function setNavigationState(element, url) {
@@ -49,28 +55,64 @@
     };
   }
 
+  function appendIfPresent(parent, child) {
+    if (child) {
+      parent.appendChild(child);
+    }
+  }
+
+  function setRowDataset(listItem, item, assignmentKey) {
+    listItem.dataset.statusTone = item.statusTone || "pending";
+    listItem.dataset.fallbackCourseName = item.isFallbackCourseName ? "true" : "false";
+    listItem.dataset.debugSource = item.debugSource || "item";
+    listItem.dataset.titleNormalized = item.titleWasNormalized ? "true" : "false";
+    listItem.dataset.source = item.source || "unknown";
+    listItem.dataset.completed = item.completedAt ? "true" : "false";
+    listItem.dataset.assignmentKey = assignmentKey;
+  }
+
+  function createActionButton(text, action, dataset = {}) {
+    const button = createElement("button", "blank-canvas__todo-action", text);
+    button.type = "button";
+    button.dataset.action = action;
+    Object.entries(dataset).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        button.dataset[key] = value;
+      }
+    });
+    return button;
+  }
+
   function createRowActions(item) {
-    if (item.source !== "custom" || !item.customAssignmentId) {
+    const assignmentKey = getAssignmentKey(item);
+    const canToggleDone = Boolean(
+      (item.source === "custom" && item.customAssignmentId) ||
+      (item.source !== "custom" && assignmentKey)
+    );
+
+    if (!canToggleDone) {
       return null;
     }
 
     const actions = createElement("span", "blank-canvas__todo-actions");
-    const editAction = createElement("button", "blank-canvas__todo-action", "Edit");
-    const deleteAction = createElement("button", "blank-canvas__todo-action", "Delete");
-    const doneAction = createElement("button", "blank-canvas__todo-action", "Mark as done");
-
-    editAction.type = "button";
-    deleteAction.type = "button";
-    doneAction.type = "button";
-    editAction.dataset.action = "edit-custom-assignment";
-    deleteAction.dataset.action = "delete-custom-assignment";
-    doneAction.dataset.action = "toggle-custom-assignment-done";
-    editAction.dataset.customAssignmentId = item.customAssignmentId;
-    deleteAction.dataset.customAssignmentId = item.customAssignmentId;
-    doneAction.dataset.customAssignmentId = item.customAssignmentId;
+    const doneAction = createActionButton("Mark as done", "toggle-assignment-done", {
+      customAssignmentId: item.source === "custom" ? item.customAssignmentId : "",
+      assignmentKey: item.source === "custom" ? "" : assignmentKey
+    });
     doneAction.dataset.completed = item.completedAt ? "true" : "false";
     doneAction.setAttribute("aria-pressed", item.completedAt ? "true" : "false");
-    actions.append(editAction, deleteAction, doneAction);
+    if (item.source === "custom" && item.customAssignmentId) {
+      const editAction = createActionButton("Edit", "edit-custom-assignment", {
+        customAssignmentId: item.customAssignmentId
+      });
+      const deleteAction = createActionButton("Delete", "delete-custom-assignment", {
+        customAssignmentId: item.customAssignmentId
+      });
+      actions.append(doneAction, editAction, deleteAction);
+      return actions;
+    }
+
+    actions.append(doneAction);
 
     return actions;
   }
@@ -92,25 +134,14 @@
       "blank-canvas__todo-due-summary",
       item.dueSummaryText || item.dueDateText
     );
+    const assignmentKey = getAssignmentKey(item);
 
-    listItem.dataset.statusTone = item.statusTone || "pending";
-    listItem.dataset.fallbackCourseName = item.isFallbackCourseName ? "true" : "false";
-    listItem.dataset.debugSource = item.debugSource || "item";
-    listItem.dataset.titleNormalized = item.titleWasNormalized ? "true" : "false";
-    listItem.dataset.source = item.source || "unknown";
-    listItem.dataset.completed = item.completedAt ? "true" : "false";
-    listItem.dataset.assignmentKey = root.assignmentCourseResolver
-      ? root.assignmentCourseResolver.getAssignmentKey(item)
-      : "";
+    setRowDataset(listItem, item, assignmentKey);
     setNavigationState(surface, item.url);
 
     main.appendChild(title);
-    if (course) {
-      meta.appendChild(course);
-    }
-    if (status) {
-      meta.appendChild(status);
-    }
+    appendIfPresent(meta, course);
+    appendIfPresent(meta, status);
     if (meta.childElementCount) {
       main.appendChild(meta);
     }

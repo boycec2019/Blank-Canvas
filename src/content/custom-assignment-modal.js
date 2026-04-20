@@ -1,38 +1,28 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
   const MODAL_ID = "blank-canvas-custom-assignment-modal";
+  const createElement =
+    root.dom && typeof root.dom.createElement === "function"
+      ? root.dom.createElement
+      : (tagName, className, textContent) => {
+          const element = document.createElement(tagName);
+          if (className) {
+            element.className = className;
+          }
+          if (textContent !== undefined) {
+            element.textContent = textContent;
+          }
+          return element;
+        };
+  const refreshDashboard =
+    root.dashboardRefresh && typeof root.dashboardRefresh.refresh === "function"
+      ? () => root.dashboardRefresh.refresh({ forceAssignments: true })
+      : () => Promise.resolve();
 
   let editingCustomAssignmentId = null;
   let currentCourseOptions = root.customAssignmentForm.normalizeCourseOptions([]);
   let elements = null;
   let scheduleController = null;
-
-  function createElement(tagName, className, textContent) {
-    const element = document.createElement(tagName);
-    if (className) {
-      element.className = className;
-    }
-    if (textContent !== undefined) {
-      element.textContent = textContent;
-    }
-    return element;
-  }
-
-  function getSettings() {
-    if (!root.storage || typeof root.storage.getSettings !== "function") {
-      return Promise.resolve({ ...root.defaults });
-    }
-
-    return root.storage.getSettings();
-  }
-
-  async function refreshDashboard() {
-    root.assignments.invalidate();
-    if (root.renderer && typeof root.renderer.render === "function") {
-      const settings = await getSettings();
-      root.renderer.render(settings);
-    }
-  }
 
   function getCourseOptions(record = null) {
     const discovered = root.assignmentUtils.buildCourseOptions(document, root.canvas.getPageContext());

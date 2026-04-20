@@ -14,6 +14,19 @@
   let todoTabId = null;
   let todoTabIsCanvas = false;
   let currentSettings = { ...root.defaults };
+  const createElement =
+    root.dom && typeof root.dom.createElement === "function"
+      ? root.dom.createElement
+      : (tagName, className, textContent) => {
+          const element = document.createElement(tagName);
+          if (className) {
+            element.className = className;
+          }
+          if (textContent !== undefined) {
+            element.textContent = textContent;
+          }
+          return element;
+        };
 
   function getPopupEnvironment() {
     return root.popupEnvironment || {};
@@ -75,17 +88,6 @@
     root.settingsUi.applyTheme(currentSettings);
     updateUiPhaseSummary(currentSettings);
     setStatus("Settings saved.");
-  }
-
-  function createElement(tagName, className, textContent) {
-    const element = document.createElement(tagName);
-    if (className) {
-      element.className = className;
-    }
-    if (textContent !== undefined) {
-      element.textContent = textContent;
-    }
-    return element;
   }
 
   function setTodoLoading(message) {

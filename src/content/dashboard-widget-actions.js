@@ -1,5 +1,9 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
+  const refreshDashboard =
+    root.dashboardRefresh && typeof root.dashboardRefresh.refresh === "function"
+      ? () => root.dashboardRefresh.refresh({ forceAssignments: true })
+      : () => Promise.resolve();
 
   function logDashboardWarning(message, error) {
     if (root.debug) {
@@ -7,50 +11,35 @@
     }
   }
 
-  function getSettings() {
-    if (!root.storage || typeof root.storage.getSettings !== "function") {
-      return Promise.resolve({ ...root.defaults });
-    }
-
-    return root.storage.getSettings();
+  function runDashboardTask(task, warningMessage) {
+    return Promise.resolve()
+      .then(task)
+      .catch((error) => {
+        logDashboardWarning(warningMessage, error);
+      });
   }
 
-  async function refreshDashboard() {
-    root.assignments.invalidate();
-    if (root.renderer && typeof root.renderer.render === "function") {
-      const settings = await getSettings();
-      root.renderer.render(settings);
+  function runModalTask(methodName, warningMessage, ...args) {
+    if (
+      !root.customAssignmentModal ||
+      typeof root.customAssignmentModal[methodName] !== "function"
+    ) {
+      return;
     }
+
+    runDashboardTask(() => root.customAssignmentModal[methodName](...args), warningMessage);
   }
 
   function openCustomAssignmentCreate() {
-    if (!root.customAssignmentModal) {
-      return;
-    }
-
-    root.customAssignmentModal.openCreate().catch((error) => {
-      logDashboardWarning("Custom assignment modal failed to open.", error);
-    });
+    runModalTask("openCreate", "Custom assignment modal failed to open.");
   }
 
   function openCustomAssignmentEdit(customAssignmentId) {
-    if (!root.customAssignmentModal) {
-      return;
-    }
-
-    root.customAssignmentModal.openEditById(customAssignmentId).catch((error) => {
-      logDashboardWarning("Custom assignment edit action failed.", error);
-    });
+    runModalTask("openEditById", "Custom assignment edit action failed.", customAssignmentId);
   }
 
   function deleteCustomAssignment(customAssignmentId) {
-    if (!root.customAssignmentModal) {
-      return;
-    }
-
-    root.customAssignmentModal.deleteRecord(customAssignmentId).catch((error) => {
-      logDashboardWarning("Custom assignment delete action failed.", error);
-    });
+    runModalTask("deleteRecord", "Custom assignment delete action failed.", customAssignmentId);
   }
 
   function toggleCustomAssignmentDone(customAssignmentId) {
@@ -58,12 +47,21 @@
       return Promise.resolve();
     }
 
-    return root.customAssignmentForm
-      .markDoneRecord(customAssignmentId)
-      .then(refreshDashboard)
-      .catch((error) => {
-        logDashboardWarning("Custom assignment done toggle failed.", error);
-      });
+    return runDashboardTask(
+      () => root.customAssignmentForm.markDoneRecord(customAssignmentId).then(refreshDashboard),
+      "Custom assignment done toggle failed."
+    );
+  }
+
+  function toggleNativeAssignmentDone(assignmentKey) {
+    if (!root.completedAssignments || !assignmentKey) {
+      return Promise.resolve();
+    }
+
+    return runDashboardTask(
+      () => root.completedAssignments.toggleAssignmentDone(assignmentKey).then(refreshDashboard),
+      "Native assignment done toggle failed."
+    );
   }
 
   function ignoreNativeAssignment(assignmentKey) {
@@ -71,12 +69,10 @@
       return Promise.resolve();
     }
 
-    return root.ignoredAssignments
-      .ignoreAssignmentKey(assignmentKey)
-      .then(refreshDashboard)
-      .catch((error) => {
-        logDashboardWarning("Native assignment ignore action failed.", error);
-      });
+    return runDashboardTask(
+      () => root.ignoredAssignments.ignoreAssignmentKey(assignmentKey).then(refreshDashboard),
+      "Native assignment ignore action failed."
+    );
   }
 
   function handleWidgetClick(event) {
@@ -86,6 +82,7 @@
 
     const createAction = event.target.closest(".blank-canvas__todo-create");
     if (createAction) {
+      event.preventDefault();
       openCustomAssignmentCreate();
       return;
     }
@@ -95,21 +92,37 @@
       return;
     }
 
-    const customAssignmentId = rowAction.getAttribute("data-custom-assignment-id");
-    if (!customAssignmentId) {
-      return;
-    }
+    event.preventDefault();
+    event.stopPropagation();
 
     if (rowAction.getAttribute("data-action") === "edit-custom-assignment") {
+      const customAssignmentId = rowAction.getAttribute("data-custom-assignment-id");
+      if (!customAssignmentId) {
+        return;
+      }
       openCustomAssignmentEdit(customAssignmentId);
       return;
     }
 
-    if (rowAction.getAttribute("data-action") === "toggle-custom-assignment-done") {
-      return toggleCustomAssignmentDone(customAssignmentId);
+    if (rowAction.getAttribute("data-action") === "toggle-assignment-done") {
+      const customAssignmentId = rowAction.getAttribute("data-custom-assignment-id");
+      if (customAssignmentId) {
+        return toggleCustomAssignmentDone(customAssignmentId);
+      }
+
+      const assignmentKey = rowAction.getAttribute("data-assignment-key");
+      if (!assignmentKey) {
+        return;
+      }
+
+      return toggleNativeAssignmentDone(assignmentKey);
     }
 
     if (rowAction.getAttribute("data-action") === "delete-custom-assignment") {
+      const customAssignmentId = rowAction.getAttribute("data-custom-assignment-id");
+      if (!customAssignmentId) {
+        return;
+      }
       deleteCustomAssignment(customAssignmentId);
     }
   }

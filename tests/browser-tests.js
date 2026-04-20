@@ -2,116 +2,70 @@
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
   const summary = document.getElementById("summary");
   const resultsList = document.getElementById("results");
-  const tests = [];
+  const testHelpers = root.browserTestHelpers;
+  const {
+    assert,
+    createFixture,
+    equal,
+    hasOverlayBackground,
+    isTransparentColor,
+    mountStyledFixture,
+    normalizeColor,
+    resetCompletedAssignments,
+    resetCustomAssignments,
+    resetIgnoredAssignments
+  } = testHelpers;
+  const harness = testHelpers.createHarness(summary, resultsList);
+  const { addTest, tests } = harness;
 
-  function assert(condition, message) {
-    if (!condition) {
-      throw new Error(message);
-    }
-  }
+  addTest("Shared DOM helper creates elements consistently across extension surfaces", () => {
+    const element = root.dom.createElement("span", "sample-class", "Hello");
 
-  function equal(actual, expected, message) {
-    if (actual !== expected) {
-      throw new Error(`${message} Expected "${expected}", got "${actual}".`);
-    }
-  }
+    equal(element.tagName, "SPAN", "The DOM helper should create the requested tag.");
+    equal(element.className, "sample-class", "The DOM helper should assign the class name.");
+    equal(element.textContent, "Hello", "The DOM helper should assign text content when provided.");
+  });
 
-  function addTest(name, run) {
-    tests.push({
-      name,
-      run
-    });
-  }
+  addTest("Dashboard refresh helper force-refreshes assignments and rerenders with current settings", async () => {
+    const calls = [];
+    const originalAssignments = root.assignments;
+    const originalRenderer = root.renderer;
+    const originalStorage = root.storage;
 
-  function createFixture(html) {
-    const fixture = document.createElement("div");
-    fixture.innerHTML = html.trim();
-    return fixture;
-  }
-
-  function resetDocumentUiState() {
-    root.themeStyles.clearRootUiState();
-    document.documentElement.classList.remove(
-      "blank-canvas--enabled",
-      "blank-canvas--dashboard",
-      "blank-canvas--hide-right-sidebar",
-      "blank-canvas--quiet-cards"
-    );
-  }
-
-  function mountStyledFixture(settings, html) {
-    const nextSettings = {
-      ...root.defaults,
-      enabled: true,
-      ...settings
-    };
-    const fixture = createFixture(html);
-    const style = document.createElement("style");
-    style.textContent = root.themeStyles.buildBaseCss(nextSettings);
-
-    resetDocumentUiState();
-    root.themeStyles.setRootClasses(nextSettings);
-    document.head.appendChild(style);
-    document.body.appendChild(fixture);
-
-    return {
-      fixture,
-      cleanup() {
-        fixture.remove();
-        style.remove();
-        resetDocumentUiState();
+    root.assignments = {
+      refreshPendingAssignments(options) {
+        calls.push(["assignments", options.force]);
+        return Promise.resolve();
       }
     };
-  }
+    root.renderer = {
+      render(settings) {
+        calls.push(["renderer", settings.enabled, settings.showDashboardTodoList]);
+      }
+    };
+    root.storage = {
+      getSettings() {
+        return Promise.resolve({
+          ...root.defaults,
+          enabled: true,
+          showDashboardTodoList: true
+        });
+      }
+    };
 
-  function normalizeColor(value) {
-    return String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
-  }
+    try {
+      const settings = await root.dashboardRefresh.refresh();
 
-  function isTransparentColor(value) {
-    const normalized = normalizeColor(value);
-    return (
-      normalized === "transparent" ||
-      normalized === "rgba(0, 0, 0, 0)" ||
-      normalized === "rgba(0,0,0,0)"
-    );
-  }
-
-  function hasOverlayBackground(style) {
-    const image = String(style.backgroundImage || "");
-    return image !== "none" && image.includes("gradient");
-  }
-
-  async function resetCustomAssignments() {
-    await chrome.storage.sync.set({
-      customAssignments: []
-    });
-  }
-
-  async function resetIgnoredAssignments() {
-    await chrome.storage.sync.set({
-      ignoredAssignmentKeys: []
-    });
-  }
-
-  function renderResults(results) {
-    const passed = results.filter((result) => result.ok).length;
-    const failed = results.length - passed;
-
-    document.body.dataset.testStatus = failed ? "failed" : "passed";
-    summary.textContent = failed
-      ? `${failed} test${failed === 1 ? "" : "s"} failed, ${passed} passed.`
-      : `All ${passed} tests passed.`;
-    summary.className = `summary ${failed ? "fail" : "pass"}`;
-
-    resultsList.replaceChildren();
-    results.forEach((result) => {
-      const item = document.createElement("li");
-      item.className = result.ok ? "pass" : "fail";
-      item.textContent = result.ok ? `PASS: ${result.name}` : `FAIL: ${result.name} - ${result.error}`;
-      resultsList.appendChild(item);
-    });
-  }
+      equal(settings.enabled, true, "Dashboard refresh should resolve the current settings.");
+      equal(calls.length, 2, "Dashboard refresh should refresh assignments and rerender once.");
+      equal(calls[0][0], "assignments", "Dashboard refresh should refresh assignments first.");
+      equal(calls[1][0], "renderer", "Dashboard refresh should rerender after refreshing assignments.");
+    } finally {
+      root.assignments = originalAssignments;
+      root.renderer = originalRenderer;
+      root.storage = originalStorage;
+    }
+  });
 
   addTest("Canvas page context resolves stable page types", () => {
     const cases = [
@@ -148,6 +102,79 @@
       false,
       "Phase normalization should preserve the disabled Phase 6.5 default."
     );
+  });
+
+  addTest("Phase 6.5 design token roles are available without enabling the phase", () => {
+    const tokens = root.ui.buildTokenMap({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true,
+      uiPhaseDashboardUiOverhaul: false
+    });
+    const snapshot = root.ui.getDesignTokenSnapshot({
+      ...root.defaults,
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true
+    });
+
+    equal(tokens["--blank-canvas-control-height"], "54px", "Shared controls should expose a stable height token.");
+    equal(tokens["--blank-canvas-control-radius"], "18px", "Shared controls should expose a stable radius token.");
+    equal(tokens["--blank-canvas-color-caret"], "rgb(109, 101, 93)", "Carets should use a shared color token.");
+    equal(tokens["--blank-canvas-color-placeholder"], "rgba(48, 40, 31, 0.42)", "Placeholder text should use a shared token.");
+    assert(
+      tokens["--blank-canvas-page-background"],
+      "Page backgrounds should use a shared token so dashboard and focused pages stay consistent."
+    );
+    equal(snapshot.hasControlTokens, true, "The design-token snapshot should report control-token readiness.");
+    equal(snapshot.hasCaretTokens, true, "The design-token snapshot should report caret-token readiness.");
+    assert(snapshot.tokenGroups.controls >= 5, "The controls token group should be represented in diagnostics.");
+    assert(snapshot.tokenCount >= 40, "The expanded token map should expose the design-system roles.");
+  });
+
+  addTest("Phase 6.5 visual tokens switch to a white field with black ink when enabled", () => {
+    const baseTokens = root.ui.buildTokenMap({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true,
+      uiPhaseDashboardUiOverhaul: false
+    });
+    const visualTokens = root.ui.buildTokenMap({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true,
+      uiPhaseDashboardUiOverhaul: true
+    });
+    const snapshot = root.ui.getDesignTokenSnapshot({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true,
+      uiPhaseDashboardUiOverhaul: true
+    });
+
+    equal(baseTokens["--blank-canvas-color-bg"], "#f6f1e8", "The base editorial palette should stay unchanged while Phase 6.5 is off.");
+    equal(visualTokens["--blank-canvas-color-bg"], "#ffffff", "Phase 6.5 should switch the page background base to white.");
+    assert(
+        visualTokens["--blank-canvas-page-background"].includes("radial-gradient") &&
+        visualTokens["--blank-canvas-page-background"].includes("10% 90%") &&
+        visualTokens["--blank-canvas-page-background"].includes("#ffffff") &&
+        !visualTokens["--blank-canvas-page-background"].includes("#efbfd0"),
+      "Phase 6.5 should expose a white shadow-gradient background instead of the pink wash."
+    );
+    equal(visualTokens["--blank-canvas-color-text"], "#111111", "Phase 6.5 should switch primary text to near-black ink.");
+    equal(
+      visualTokens["--blank-canvas-font-heading"],
+      '"Helvetica Neue", "Arial Nova", "Segoe UI", Arial, sans-serif',
+      "Phase 6.5 should switch headings to the leaner sans stack."
+    );
+    assert(
+      visualTokens["--blank-canvas-shadow-panel"].includes("rgba(26, 33, 39, 0.08)"),
+      "Phase 6.5 should restore soft panel shadows for the neutral look."
+    );
+    equal(snapshot.visualMode, "dashboard-ui-overhaul", "The token snapshot should report the visual mode.");
   });
 
   addTest("Feature registry exposes page-scoped feature enablement", () => {
@@ -357,7 +384,124 @@
     });
 
     assert(cssText.includes(".blank-canvas-ui-surface"), "Managed CSS should include shared surface primitives.");
+    assert(cssText.includes(".blank-canvas-ui-control"), "Managed CSS should include shared control primitives.");
+    assert(cssText.includes(".blank-canvas-ui-caret"), "Managed CSS should include shared caret primitives.");
+    assert(cssText.includes(".blank-canvas-ui-calendar"), "Managed CSS should include shared calendar primitives.");
     assert(cssText.includes(".blank-canvas-ui-popover"), "Managed CSS should include shared popover primitives.");
+  });
+
+  addTest("Dashboard and modal styles consume shared Phase 6.5 token roles", () => {
+    const settings = {
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseAgendaList: true,
+      uiPhaseAssignmentHierarchy: true
+    };
+    const dashboardCss = root.dashboardStyles.getStyles(settings);
+    const modalCss = root.customAssignmentModal.getStyles();
+
+    assert(
+      dashboardCss.includes("--blank-canvas-surface-button-subtle"),
+      "Dashboard controls should consume the shared subtle button surface token."
+    );
+    assert(
+      dashboardCss.includes("--blank-canvas-surface-button-muted"),
+      "Dashboard action/status controls should consume the shared muted button surface token."
+    );
+    assert(
+      modalCss.includes("--blank-canvas-control-height") &&
+        modalCss.includes("--blank-canvas-control-radius") &&
+        modalCss.includes("--blank-canvas-color-caret"),
+      "The custom assignment modal should consume shared control and caret tokens."
+    );
+    assert(
+      modalCss.includes("--blank-canvas-color-placeholder") &&
+        modalCss.includes("--blank-canvas-shadow-popover"),
+      "The custom assignment modal should consume shared placeholder and popover tokens."
+    );
+  });
+
+  addTest("Phase 6.5 dashboard CSS is gated by the visual overhaul flag", () => {
+    const baseCss = root.dashboardStyles.getStyles({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseAgendaList: true,
+      uiPhaseAssignmentHierarchy: true,
+      uiPhaseDashboardUiOverhaul: false
+    });
+    const visualCss = root.dashboardStyles.getStyles({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseAgendaList: true,
+      uiPhaseAssignmentHierarchy: true,
+      uiPhaseDashboardUiOverhaul: true
+    });
+
+    assert(
+      !baseCss.includes("blank-canvas--phase-dashboard-ui-overhaul"),
+      "Phase 6.5 dashboard selectors should not be emitted while the flag is off."
+    );
+    assert(
+      visualCss.includes("blank-canvas--phase-dashboard-ui-overhaul") &&
+        visualCss.includes("var(--blank-canvas-page-background)") &&
+        visualCss.includes("var(--blank-canvas-dashboard-column-gap)"),
+      "Phase 6.5 should emit the minimalist dashboard visual rules when enabled."
+    );
+    assert(visualCss.includes("overflow-x: hidden"), "Phase 6.5 should guard against horizontal page overflow.");
+    assert(
+      !visualCss.includes("blank-canvas--phase-dashboard-ui-overhaul.blank-canvas--dashboard #menu"),
+      "Phase 6.5 should not broadly recolor the left rail and risk marking every nav item active."
+    );
+    assert(
+      visualCss.includes("toggle-assignment-done'][data-completed='true']"),
+      "Phase 6.5 should preserve the completed custom-assignment green state."
+    );
+    assert(
+      visualCss.includes("#DashboardCard_Container::before") &&
+        visualCss.includes('content: "Classes"') &&
+        visualCss.includes("writing-mode: vertical-rl"),
+      "Phase 6.5 should give the classes block a distinct geometric label treatment."
+    );
+    assert(
+      visualCss.includes("#DashboardCard_Container::after") &&
+        visualCss.includes("content: none"),
+      "Phase 6.5 should remove the green splash from the classes block in the neutral background pass."
+    );
+    assert(
+      visualCss.includes("border-radius: 6px 34px 34px 6px") &&
+        visualCss.includes("border-left: 4px solid"),
+      "Phase 6.5 should give the assignments block a distinct paper-like silhouette."
+    );
+    assert(
+      visualCss.includes("--blank-canvas-class-accent") &&
+        visualCss.includes("--blank-canvas-class-accent-border") &&
+        visualCss.includes("isolation: isolate !important;") &&
+        visualCss.includes('content: "→"') &&
+        visualCss.includes("--blank-canvas-class-pill-arrow-gutter") &&
+        visualCss.includes("inset: 0;") &&
+        visualCss.includes(".ic-DashboardCard::after") &&
+        visualCss.includes(":has(a.ic-DashboardCard__link:focus-visible)") &&
+        visualCss.includes("opacity: 1;") &&
+        visualCss.includes("opacity: 0;") &&
+        visualCss.includes("left: 0;") &&
+        visualCss.includes("right: -18px;") &&
+        visualCss.includes("translateX(18px)") &&
+        visualCss.includes("transform: scale(1);") &&
+        visualCss.includes("color: white !important;"),
+      "Phase 6.5 should give Classes a flow-button treatment driven by per-course accent variables."
+    );
+    assert(
+      !visualCss.includes(".ic-DashboardCard__header_content span,"),
+      "Phase 6.5 should avoid broad header-content span overrides that would wipe out Canvas course colors."
+    );
+    assert(
+      visualCss.includes("font-weight: 600 !important") &&
+        visualCss.includes("font-weight: 500;"),
+      "Phase 6.5 should lighten the dashboard typography weights for the thinner type direction."
+    );
   });
 
   addTest("Diagnostics expose page context and feature registry state", () => {
@@ -387,8 +531,82 @@
         "Diagnostics should include registered feature ids."
       );
       assert(Array.isArray(report.mountedFeatureIds), "Diagnostics should expose mounted feature ids.");
+      equal(
+        report.designSystem.phaseDashboardUiOverhaulEnabled,
+        false,
+        "Diagnostics should report the Phase 6.5 flag state."
+      );
+      equal(report.designSystem.primitivesStylesheetPresent, true, "Diagnostics should report primitive CSS readiness.");
+      equal(report.designSystem.hasControlTokens, true, "Diagnostics should report control token readiness.");
+      equal(report.designSystem.hasCaretTokens, true, "Diagnostics should report caret token readiness.");
+      equal(report.reactBridge.available, true, "Diagnostics should expose the React bridge scaffold.");
+      equal(report.reactBridge.mountedCount, 0, "Diagnostics should keep the React bridge idle by default.");
+      equal(
+        report.designSystem.modalPrimitiveAdoption.usesCaretTokens,
+        true,
+        "Diagnostics should report modal primitive adoption."
+      );
+      equal(
+        report.designSystem.dashboardPrimitiveAdoption.usesDashboardUiOverhaulSelector,
+        false,
+        "Diagnostics should keep Phase 6.5 visual adoption inactive while the flag is off."
+      );
     } finally {
       root.canvas.getPageContext = originalGetPageContext;
+    }
+  });
+
+  addTest("React bridge mounts and unmounts extension-owned UI safely", async () => {
+    assert(root.react && root.react.available, "React bridge should be available in the test harness.");
+
+    const fixture = document.createElement("div");
+    document.body.appendChild(fixture);
+
+    try {
+      function TestComponent(props) {
+        return root.react.createElement("div", {
+          id: "react-bridge-proof",
+          "data-label": props.label
+        }, props.label);
+      }
+
+      root.react.mountComponent(TestComponent, {
+        container: fixture,
+        id: "react-bridge-proof",
+        props: {
+          label: "React ready"
+        },
+        strict: false
+      });
+
+      await Promise.resolve();
+
+      equal(
+        fixture.querySelector("#react-bridge-proof")?.textContent || "",
+        "React ready",
+        "React bridge should render a mounted component into the provided container."
+      );
+      equal(
+        root.react.getSnapshot().mountedCount,
+        1,
+        "React bridge should track mounted roots."
+      );
+
+      root.react.unmount(fixture);
+      await Promise.resolve();
+
+      equal(
+        fixture.textContent.trim(),
+        "",
+        "React bridge should cleanly unmount from the provided container."
+      );
+      equal(
+        root.react.getSnapshot().mountedCount,
+        0,
+        "React bridge should clear mounted root tracking after unmount."
+      );
+    } finally {
+      fixture.remove();
     }
   });
 
@@ -767,6 +985,7 @@
     const originalApi = root.assignmentApi.fetchPendingAssignmentsFromApi;
     await resetCustomAssignments();
     await resetIgnoredAssignments();
+    await resetCompletedAssignments();
 
     root.assignmentDom.scrapePendingAssignmentsFromDom = () => [];
     root.assignmentApi.fetchPendingAssignmentsFromApi = async () => [
@@ -814,6 +1033,108 @@
     root.assignmentApi.fetchPendingAssignmentsFromApi = originalApi;
     await resetCustomAssignments();
     await resetIgnoredAssignments();
+    await resetCompletedAssignments();
+  });
+
+  addTest("Assignment refresh applies persisted completion state to native Canvas assignments", async () => {
+    const originalDom = root.assignmentDom.scrapePendingAssignmentsFromDom;
+    const originalApi = root.assignmentApi.fetchPendingAssignmentsFromApi;
+    await resetCustomAssignments();
+    await resetIgnoredAssignments();
+    await resetCompletedAssignments();
+
+    root.assignmentDom.scrapePendingAssignmentsFromDom = () => [];
+    root.assignmentApi.fetchPendingAssignmentsFromApi = async () => [
+      {
+        title: "Canvas assignment",
+        courseId: "101",
+        courseName: "English 101",
+        dueSummaryText: "Fri, Apr 10 at 11:59 PM",
+        dueLabel: "Due",
+        dueAt: "2026-04-10T23:59:00Z",
+        dueSortValue: 1,
+        statusTone: "pending",
+        source: "api",
+        url: "https://canvas.example.com/courses/101/assignments/7"
+      }
+    ];
+
+    await root.completedAssignments.toggleAssignmentDone(
+      root.assignmentCourseResolver.getAssignmentKey({
+        courseId: "101",
+        url: "https://canvas.example.com/courses/101/assignments/7",
+        title: "Canvas assignment"
+      }),
+      {
+        now: new Date("2026-04-13T10:30:00Z")
+      }
+    );
+
+    root.assignments.invalidate();
+    const snapshot = await root.assignments.refreshPendingAssignments({
+      force: true
+    });
+
+    equal(snapshot.items[0].completedAt !== null, true, "Merged native assignments should preserve persisted completion state.");
+    equal(snapshot.items[0].statusTone, "done", "Completed native assignments should resolve to the done status tone.");
+
+    root.assignmentDom.scrapePendingAssignmentsFromDom = originalDom;
+    root.assignmentApi.fetchPendingAssignmentsFromApi = originalApi;
+    await resetCustomAssignments();
+    await resetIgnoredAssignments();
+    await resetCompletedAssignments();
+  });
+
+  addTest("Assignment refresh treats stale extension contexts as quiet DOM fallbacks", async () => {
+    const originalDom = root.assignmentDom.scrapePendingAssignmentsFromDom;
+    const originalFetchMerged = root.assignmentRefresh.fetchMergedAssignments;
+    const originalFetchFallback = root.assignmentRefresh.fetchFallbackWithCustom;
+    const originalWarn = console.warn;
+    const warnCalls = [];
+    let fallbackWithCustomCalled = false;
+
+    root.assignmentDom.scrapePendingAssignmentsFromDom = () => [
+      {
+        title: "Visible DOM assignment",
+        courseId: "101",
+        courseName: "English 101",
+        dueSummaryText: "Fri, Apr 10 at 11:59 PM",
+        dueSortValue: 1,
+        source: "dom",
+        url: "https://canvas.example.com/courses/101/assignments/7"
+      }
+    ];
+    root.assignmentRefresh.fetchMergedAssignments = async () => {
+      throw new Error("Extension context invalidated.");
+    };
+    root.assignmentRefresh.fetchFallbackWithCustom = async () => {
+      fallbackWithCustomCalled = true;
+      return {
+        mergedFallback: []
+      };
+    };
+    console.warn = (...args) => warnCalls.push(args);
+
+    try {
+      root.assignments.invalidate();
+      const snapshot = await root.assignments.refreshPendingAssignments({
+        force: true
+      });
+
+      equal(snapshot.status, "ready", "A stale extension context should resolve with the DOM fallback.");
+      equal(snapshot.source, "dom", "A stale extension context should keep the fallback source as DOM.");
+      equal(snapshot.items.length, 1, "A stale extension context should preserve visible DOM assignments.");
+      equal(fallbackWithCustomCalled, false, "Stale contexts should not call extension-backed fallback storage.");
+
+      root.debug.warn("assignments", "Pending assignment refresh failed.", "Error: Extension context invalidated.");
+      equal(warnCalls.length, 0, "Stale extension context warnings should not be printed to Chrome errors.");
+    } finally {
+      root.assignmentDom.scrapePendingAssignmentsFromDom = originalDom;
+      root.assignmentRefresh.fetchMergedAssignments = originalFetchMerged;
+      root.assignmentRefresh.fetchFallbackWithCustom = originalFetchFallback;
+      console.warn = originalWarn;
+      root.assignments.invalidate();
+    }
   });
 
   addTest("Ignored Canvas assignment keys filter native assignments out of merged results", async () => {
@@ -847,6 +1168,28 @@
     equal(filtered[0].source, "custom", "Custom assignments should remain visible when native items are ignored.");
 
     await resetIgnoredAssignments();
+  });
+
+  addTest("Completed assignment storage toggles native Canvas assignments by assignment key", async () => {
+    await resetCompletedAssignments();
+
+    const marked = await root.completedAssignments.toggleAssignmentDone("assignment:101:7", {
+      now: new Date("2026-04-13T12:30:00Z")
+    });
+    assert(marked.completedAt, "Completed native assignments should record a completion timestamp.");
+    equal(
+      (await root.completedAssignments.listCompletedAssignmentKeys()).length,
+      1,
+      "Completed native assignment keys should be persisted."
+    );
+
+    const reopened = await root.completedAssignments.toggleAssignmentDone("assignment:101:7");
+    equal(reopened.completedAt, null, "Toggling a completed native assignment again should clear completion.");
+    equal(
+      (await root.completedAssignments.listCompletedAssignmentKeys()).length,
+      0,
+      "Clearing completion should remove the native assignment key from storage."
+    );
   });
 
   addTest("Fetches planner items across pages and maps assignment fields", async () => {
@@ -1037,6 +1380,30 @@
     }
   });
 
+  addTest("Agenda rows get a subtle hover animation without changing assignment behavior", () => {
+    const cssText = root.dashboardStyles.getStyles({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseAgendaList: true,
+      uiPhaseAssignmentHierarchy: true
+    });
+
+    assert(
+      cssText.includes("#${WIDGET_ID} .blank-canvas__todo-link".replace("${WIDGET_ID}", "blank-canvas-dashboard-todo")) ||
+        cssText.includes(".blank-canvas__todo-link"),
+      "Dashboard styles should still define the assignment row surface."
+    );
+    assert(
+      cssText.includes("background-color 160ms ease") &&
+        cssText.includes('background: rgba(18, 60, 47, 0.035)') &&
+        cssText.includes('transform: translateX(4px)') &&
+        cssText.includes(".blank-canvas__todo-link:hover") &&
+        cssText.includes(".blank-canvas__todo-link:focus-within"),
+      "Agenda rows should use a light hover wash and a small horizontal nudge for both linked and custom assignment surfaces."
+    );
+  });
+
   addTest("Phase 3 injects left-rail styling when enabled", () => {
     const cssText = root.themeStyles.buildBaseCss({
       uiLayoutMode: "editorial",
@@ -1085,12 +1452,15 @@
       const rail = mounted.fixture.querySelector("#menu");
       const inactiveContainer = mounted.fixture.querySelector("#global_nav_courses_link .menu-item-icon-container");
       const label = mounted.fixture.querySelector("#global_nav_courses_link .menu-item__text");
+      const inactiveStyle = window.getComputedStyle(inactiveContainer);
 
       equal(
-        normalizeColor(window.getComputedStyle(inactiveContainer).backgroundColor),
+        normalizeColor(inactiveStyle.backgroundColor),
         normalizeColor(window.getComputedStyle(rail).backgroundColor),
         "Inactive rail buttons should sit on the same base surface as the sidebar."
       );
+      equal(inactiveStyle.width, "44px", "Collapsed rail icon targets should use compact centered tiles.");
+      equal(inactiveStyle.borderRadius, "14px", "Collapsed rail icon targets should have rounded sidebar tiles.");
       equal(window.getComputedStyle(label).display, "none", "Collapsed rail labels should be hidden.");
     } finally {
       mounted.cleanup();
@@ -1319,6 +1689,93 @@
         window.getComputedStyle(innerContainer).borderLeftWidth,
         "0px",
         "The inner Dashboard icon tile should not draw a second selection border."
+      );
+    } finally {
+      mounted.cleanup();
+    }
+  });
+
+  addTest("Secondary global nav hiding catches icon-only buttons", () => {
+    const fixture = createFixture(`
+      <nav id="menu">
+        <ul class="ic-app-header__menu-list">
+          <li class="ic-app-header__menu-list-item">
+            <a id="global_nav_dashboard_link" href="/" aria-label="Dashboard"></a>
+          </li>
+          <li class="ic-app-header__menu-list-item">
+            <button id="global_nav_history_link" type="button" aria-label="History"></button>
+          </li>
+          <li class="ic-app-header__menu-list-item">
+            <button type="button" title="Search"></button>
+          </li>
+          <li class="ic-app-header__menu-list-item">
+            <button type="button" aria-label="Spark"></button>
+          </li>
+          <li class="ic-app-header__menu-list-item">
+            <button type="button" aria-label="Help"></button>
+          </li>
+        </ul>
+      </nav>
+    `);
+    document.body.appendChild(fixture);
+
+    try {
+      const targets = root.canvas.findSecondaryNavItems();
+
+      equal(targets.length, 4, "Icon-only secondary rail controls should be resolved as hide targets.");
+      assert(
+        targets.every((target) => target.classList.contains("ic-app-header__menu-list-item")),
+        "Secondary rail controls should hide their owning rail list item."
+      );
+      assert(
+        !targets.some((target) => target.querySelector("#global_nav_dashboard_link")),
+        "Primary dashboard navigation should not be hidden with secondary controls."
+      );
+    } finally {
+      fixture.remove();
+    }
+  });
+
+  addTest("Managed-hide still wins over compact left-rail layout display rules", () => {
+    const mounted = mountStyledFixture(
+      {
+        uiLayoutMode: "editorial",
+        uiPhaseTypographyReset: true,
+        uiPhaseLeftRailSimplification: true
+      },
+      `
+        <nav id="menu">
+          <ul class="ic-app-header__menu-list">
+            <li class="menu-item ic-app-header__menu-list-item blank-canvas--managed-hide">
+              <a id="global_nav_history_link" role="button" href="#" class="ic-app-header__menu-list-link">
+                <div class="menu-item-icon-container" aria-hidden="true"></div>
+                <div class="menu-item__text">History</div>
+              </a>
+            </li>
+            <li class="menu-item ic-app-header__menu-list-item">
+              <a class="ic-app-header__menu-list-link blank-canvas--managed-hide" href="/accounts/1/external_tools/13001?toolId=search-13001">
+                <svg class="menu-item__icon"></svg>
+                <div class="menu-item__text">Search</div>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      `
+    );
+
+    try {
+      const hiddenListItem = mounted.fixture.querySelector("#global_nav_history_link").closest("li");
+      const hiddenLink = mounted.fixture.querySelector("a[href*='toolId=search']");
+
+      equal(
+        window.getComputedStyle(hiddenListItem).display,
+        "none",
+        "Managed hidden rail list items should not be restored by compact rail flex rules."
+      );
+      equal(
+        window.getComputedStyle(hiddenLink).display,
+        "none",
+        "Managed hidden rail links should not be restored by compact rail link rules."
       );
     } finally {
       mounted.cleanup();
@@ -1572,17 +2029,22 @@
       equal(
         widget.querySelectorAll(".blank-canvas__todo-item[data-source='custom'] .blank-canvas__todo-action").length,
         3,
-        "Custom rows should expose edit, delete, and completion controls."
+        "Custom rows should expose mark-as-done, edit, and delete controls."
       );
       equal(
         widget.querySelectorAll(".blank-canvas__todo-item[data-source='api'] .blank-canvas__todo-action").length,
-        0,
-        "Canvas rows should not expose custom-assignment actions."
+        1,
+        "Canvas rows should expose only the shared mark-as-done toggle."
       );
       equal(
-        widget.querySelector(".blank-canvas__todo-item[data-source='custom'] [data-action='toggle-custom-assignment-done']").textContent,
+        widget.querySelector(".blank-canvas__todo-item[data-source='custom'] [data-action='toggle-assignment-done']").textContent,
         "Mark as done",
         "Custom rows should expose the completion toggle."
+      );
+      equal(
+        widget.querySelector(".blank-canvas__todo-item[data-source='custom'] .blank-canvas__todo-action").textContent,
+        "Mark as done",
+        "Custom rows should show mark-as-done as the first action."
       );
     } finally {
       widget.remove();
@@ -1618,7 +2080,7 @@
       });
 
       const row = widget.querySelector(".blank-canvas__todo-item[data-source='custom']");
-      const action = row.querySelector("[data-action='toggle-custom-assignment-done']");
+      const action = row.querySelector("[data-action='toggle-assignment-done']");
       equal(row.dataset.completed, "true", "Completed custom rows should stay rendered.");
       equal(action.dataset.completed, "true", "The completion toggle should reflect the completed state.");
       equal(action.getAttribute("aria-pressed"), "true", "The completion toggle should expose its active state.");
@@ -1692,6 +2154,67 @@
       window.confirm = originalConfirm;
       widget.remove();
       await resetIgnoredAssignments();
+    }
+  });
+
+  addTest("Dashboard done toggles force-refresh assignments without invalidating first", async () => {
+    const originalToggleAssignmentDone = root.completedAssignments.toggleAssignmentDone;
+    const originalRefreshPendingAssignments = root.assignments.refreshPendingAssignments;
+    const originalInvalidate = root.assignments.invalidate;
+    const originalRenderer = root.renderer;
+    const originalGetSettings = root.storage.getSettings;
+    const calls = [];
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.dataset.action = "toggle-assignment-done";
+    button.dataset.assignmentKey = "assignment:101:7";
+    document.body.appendChild(button);
+
+    root.completedAssignments.toggleAssignmentDone = async () => {
+      calls.push("toggle");
+      return {
+        key: "assignment:101:7",
+        completedAt: "2026-04-14T02:00:00.000Z"
+      };
+    };
+    root.assignments.refreshPendingAssignments = async (options = {}) => {
+      calls.push(`refresh:${options.force === true}`);
+      return {
+        items: [],
+        source: "api",
+        sourceCounts: {},
+        status: "ready"
+      };
+    };
+    root.assignments.invalidate = () => {
+      calls.push("invalidate");
+    };
+    root.renderer = root.renderer || {};
+    root.renderer.render = () => {
+      calls.push("render");
+      return {};
+    };
+    root.storage.getSettings = async () => ({ ...root.defaults });
+
+    try {
+      await root.dashboardWidgetActions.handleWidgetClick({
+        target: button,
+        preventDefault() {},
+        stopPropagation() {}
+      });
+
+      equal(calls.includes("invalidate"), false, "Done toggles should not invalidate the assignment store before refreshing.");
+      equal(calls[0], "toggle", "Done toggles should persist the completion state first.");
+      equal(calls[1], "refresh:true", "Done toggles should force-refresh assignments after persisting.");
+      equal(calls[2], "render", "Done toggles should rerender after the forced refresh settles.");
+    } finally {
+      root.completedAssignments.toggleAssignmentDone = originalToggleAssignmentDone;
+      root.assignments.refreshPendingAssignments = originalRefreshPendingAssignments;
+      root.assignments.invalidate = originalInvalidate;
+      root.renderer = originalRenderer;
+      root.storage.getSettings = originalGetSettings;
+      button.remove();
     }
   });
 
@@ -1800,7 +2323,8 @@
   addTest("Custom assignment modal styles keep action buttons rounded", () => {
     const cssText = root.customAssignmentModal.getStyles();
     assert(
-      cssText.includes(".blank-canvas__custom-modal-save") && cssText.includes("border-radius: 18px"),
+      cssText.includes(".blank-canvas__custom-modal-save") &&
+        cssText.includes("border-radius: var(--blank-canvas-button-radius)"),
       "The custom assignment modal should keep rounded save/cancel/close controls."
     );
   });
@@ -2245,6 +2769,236 @@
     }
   });
 
+  addTest("Phase 6.5 diagnostics report the minimalist two-block dashboard state", () => {
+    const fixture = createFixture(`
+      <div class="ic-DashboardLayout__Main" style="width: 1400px;">
+        <header class="ic-Dashboard-header"><h1>Dashboard</h1></header>
+        <section id="DashboardCard_Container">
+          <article class="ic-DashboardCard">
+            <div class="ic-DashboardCard__header_content">
+              <a class="ic-DashboardCard__link" href="/courses/101">English 101</a>
+            </div>
+          </article>
+        </section>
+      </div>
+    `);
+    document.body.appendChild(fixture);
+
+    const originalGetPageContext = root.canvas.getPageContext;
+    const originalIsCanvasLikePage = root.canvas.isCanvasLikePage;
+    const settings = {
+      ...root.defaults,
+      enabled: true,
+      showDashboardTodoList: true,
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true,
+      uiPhaseDashboardShell: true,
+      uiPhaseAgendaList: true,
+      uiPhaseAssignmentHierarchy: true,
+      uiPhaseDashboardUiOverhaul: true
+    };
+
+    try {
+      root.canvas.getPageContext = () => ({
+        path: "/",
+        pageType: "dashboard",
+        pageFamily: "dashboard",
+        pageRoutePattern: "/dashboard",
+        isDashboard: true,
+        isCourse: false,
+        courseId: "",
+        globalNavKey: "dashboard"
+      });
+      root.canvas.isCanvasLikePage = () => true;
+      root.themeStyles.setRootClasses(settings);
+
+      root.dashboardLayout.sync({
+        mount: {
+          container: fixture.querySelector(".ic-DashboardLayout__Main"),
+          anchor: fixture.querySelector("#DashboardCard_Container")
+        },
+        settings,
+        assignmentSnapshot: {
+          status: "ready",
+          source: "api",
+          items: []
+        },
+        rowItems: []
+      });
+
+      const report = root.diagnostics.buildReport(settings);
+      equal(report.designSystem.phaseDashboardUiOverhaulEnabled, true, "Diagnostics should report the Phase 6.5 flag.");
+      equal(report.designSystem.dashboardUiOverhaulVisualModeActive, true, "Diagnostics should report active dashboard visual mode.");
+      equal(report.designSystem.dashboardTwoBlockLayoutActive, true, "Diagnostics should report the two-block dashboard layout.");
+      equal(report.designSystem.assignmentBlockMounted, true, "Diagnostics should report the assignments block.");
+      equal(report.designSystem.classesBlockMounted, true, "Diagnostics should report the classes block.");
+      assert(
+        typeof report.designSystem.hasHorizontalOverflow === "boolean",
+        "Diagnostics should expose whether the dashboard is horizontally overflowing."
+      );
+      equal(
+        fixture.querySelector("#blank-canvas-dashboard-todo .blank-canvas__today-strip"),
+        null,
+        "The Phase 6.5 dashboard should not reintroduce the rolled-back today strip."
+      );
+    } finally {
+      root.canvas.getPageContext = originalGetPageContext;
+      root.canvas.isCanvasLikePage = originalIsCanvasLikePage;
+      root.themeStyles.clearRootUiState();
+      root.dashboard.teardown();
+      fixture.remove();
+    }
+  });
+
+  addTest("Classes lift Canvas inline course colors into flow-button accent variables", () => {
+    const fixture = createFixture(`
+      <section id="DashboardCard_Container">
+        <article class="ic-DashboardCard">
+          <div class="ic-DashboardCard__header_content">
+            <a class="ic-DashboardCard__link" href="/courses/101">
+              <span style="color: rgb(203, 63, 119);">EECS 70A/70LA</span>
+            </a>
+          </div>
+        </article>
+      </section>
+    `);
+    document.body.appendChild(fixture);
+
+    try {
+      root.dashboardStyles.syncClassCardAccents(fixture);
+      const card = fixture.querySelector(".ic-DashboardCard");
+      equal(
+        card.style.getPropertyValue("--blank-canvas-class-accent").trim(),
+        "rgb(203, 63, 119)",
+        "Class cards should adopt the live Canvas course color as their accent."
+      );
+      equal(
+        card.style.getPropertyValue("--blank-canvas-class-accent-soft").trim(),
+        "rgba(203, 63, 119, 0.12)",
+        "Class cards should derive a soft accent fill from the Canvas course color."
+      );
+      equal(
+        card.style.getPropertyValue("--blank-canvas-class-accent-border").trim(),
+        "rgba(203, 63, 119, 0.34)",
+        "Class cards should derive a border accent from the Canvas course color."
+      );
+    } finally {
+      fixture.remove();
+    }
+  });
+
+  addTest("Classes keep Canvas inline accents even when computed text color turns white", () => {
+    const fixture = createFixture(`
+      <section id="DashboardCard_Container">
+        <article class="ic-DashboardCard">
+          <div class="ic-DashboardCard__header_content">
+            <a class="ic-DashboardCard__link" href="/courses/101">
+              <h2 class="ic-DashboardCard__header-title">
+                <span style="color: rgb(203, 63, 119);">EECS 70A/70LA</span>
+              </h2>
+            </a>
+          </div>
+        </article>
+      </section>
+    `);
+    const override = document.createElement("style");
+    override.textContent = `
+      #DashboardCard_Container .ic-DashboardCard__header-title span {
+        color: white !important;
+      }
+    `;
+    document.head.appendChild(override);
+    document.body.appendChild(fixture);
+
+    try {
+      root.dashboardStyles.syncClassCardAccents(fixture);
+      const card = fixture.querySelector(".ic-DashboardCard");
+      equal(
+        card.style.getPropertyValue("--blank-canvas-class-accent").trim(),
+        "rgb(203, 63, 119)",
+        "Class cards should prefer Canvas' inline color over a transient computed white text state."
+      );
+      equal(
+        card.style.getPropertyValue("--blank-canvas-class-accent-border").trim(),
+        "rgba(203, 63, 119, 0.34)",
+        "Derived class-card borders should still come from the stable inline Canvas accent."
+      );
+    } finally {
+      fixture.remove();
+      override.remove();
+    }
+  });
+
+  addTest("Completed native rows stay visible and no longer count toward active assignments", () => {
+    const widget = root.dashboardView.createWidget();
+    document.body.appendChild(widget);
+    try {
+      root.dashboardView.syncPresentationState(widget, {
+        uiLayoutMode: "editorial",
+        uiPhaseAgendaList: true,
+        uiPhaseAssignmentHierarchy: true
+      });
+
+      root.dashboardView.renderItems(widget, {
+        status: "ready",
+        source: "api",
+        items: [
+          {
+            title: "Canvas assignment",
+            courseId: "101",
+            courseName: "English 101",
+            dueSummaryText: "Fri, Apr 10 at 11:59 PM",
+            dueLabel: "Done",
+            statusTone: "done",
+            source: "api",
+            completedAt: "2026-04-14T02:00:00.000Z",
+            url: "https://canvas.example.com/courses/101/assignments/7"
+          }
+        ]
+      });
+
+      const row = widget.querySelector(".blank-canvas__todo-item[data-source='api']");
+      const action = row.querySelector("[data-action='toggle-assignment-done']");
+      equal(row.dataset.completed, "true", "Completed native rows should stay rendered.");
+      equal(action.dataset.completed, "true", "Native completion toggles should reflect the completed state.");
+      equal(
+        widget.querySelector(".blank-canvas__todo-count").textContent,
+        "0 Assignments",
+        "Completed native rows should no longer count toward the assignment counter."
+      );
+    } finally {
+      widget.remove();
+    }
+  });
+
+  addTest("Classes keep a fixed left-aligned text lane and ellipsize inside it", () => {
+    const visualCss = root.dashboardStyles.getStyles({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseAgendaList: true,
+      uiPhaseAssignmentHierarchy: true,
+      uiPhaseDashboardUiOverhaul: true
+    });
+
+    assert(
+      visualCss.includes(".ic-DashboardCard__header_content") &&
+        visualCss.includes("--blank-canvas-class-pill-padding-inline") &&
+        visualCss.includes("padding: 18px var(--blank-canvas-class-pill-padding-inline) !important;") &&
+        visualCss.includes("padding-right: var(--blank-canvas-class-pill-arrow-gutter) !important;") &&
+        visualCss.includes("background: transparent !important;") &&
+        visualCss.includes("max-width: 100% !important;") &&
+        visualCss.includes("text-overflow: ellipsis !important;") &&
+        visualCss.includes("text-align: left !important;") &&
+        visualCss.includes("justify-content: flex-start !important;"),
+      "Classes should keep a fixed left-aligned text lane with symmetric side padding and only ellipsize inside that lane."
+    );
+    assert(
+      !visualCss.includes("data-blank-canvas-class-overflow"),
+      "Classes should no longer depend on a special overflow mode to align long titles."
+    );
+  });
+
   addTest("Dashboard layout falls back to stacked mode below the split breakpoint", () => {
     const fixture = createFixture(`
       <div class="ic-DashboardLayout__Main" style="width: 840px;">
@@ -2282,25 +3036,5 @@
     }
   });
 
-  (async () => {
-    const results = [];
-
-    for (const test of tests) {
-      try {
-        await test.run();
-        results.push({
-          name: test.name,
-          ok: true
-        });
-      } catch (error) {
-        results.push({
-          name: test.name,
-          ok: false,
-          error: String(error && error.message ? error.message : error)
-        });
-      }
-    }
-
-    renderResults(results);
-  })();
+  harness.run();
 })();

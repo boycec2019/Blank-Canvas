@@ -7,6 +7,77 @@
   const PHASE_AGENDA_LIST = "uiPhaseAgendaList";
   const PHASE_ASSIGNMENT_HIERARCHY = "uiPhaseAssignmentHierarchy";
   const PHASE_DASHBOARD_UI_OVERHAUL = "uiPhaseDashboardUiOverhaul";
+  const TOKEN_GROUPS = Object.freeze({
+    color: Object.freeze([
+      "--blank-canvas-page-background",
+      "--blank-canvas-color-bg",
+      "--blank-canvas-color-surface",
+      "--blank-canvas-color-surface-elevated",
+      "--blank-canvas-color-surface-muted",
+      "--blank-canvas-color-surface-popover",
+      "--blank-canvas-color-text",
+      "--blank-canvas-color-muted",
+      "--blank-canvas-color-accent",
+      "--blank-canvas-color-warning",
+      "--blank-canvas-color-danger",
+      "--blank-canvas-color-placeholder",
+      "--blank-canvas-color-caret",
+      "--blank-canvas-color-overlay"
+    ]),
+    typography: Object.freeze([
+      "--blank-canvas-font-sans",
+      "--blank-canvas-font-serif",
+      "--blank-canvas-font-body",
+      "--blank-canvas-font-heading",
+      "--blank-canvas-font-size-xs",
+      "--blank-canvas-font-size-sm",
+      "--blank-canvas-font-size-md",
+      "--blank-canvas-font-size-lg",
+      "--blank-canvas-font-size-display",
+      "--blank-canvas-line-height-tight",
+      "--blank-canvas-line-height-base"
+    ]),
+    spacing: Object.freeze([
+      "--blank-canvas-space-1",
+      "--blank-canvas-space-2",
+      "--blank-canvas-space-3",
+      "--blank-canvas-space-4",
+      "--blank-canvas-space-5",
+      "--blank-canvas-space-6",
+      "--blank-canvas-dashboard-page-width",
+      "--blank-canvas-dashboard-column-gap",
+      "--blank-canvas-control-padding-x",
+      "--blank-canvas-control-padding-y"
+    ]),
+    surfaces: Object.freeze([
+      "--blank-canvas-surface-card",
+      "--blank-canvas-surface-control",
+      "--blank-canvas-surface-button",
+      "--blank-canvas-surface-button-subtle",
+      "--blank-canvas-surface-button-muted",
+      "--blank-canvas-surface-popover",
+      "--blank-canvas-surface-modal"
+    ]),
+    controls: Object.freeze([
+      "--blank-canvas-control-height",
+      "--blank-canvas-control-radius",
+      "--blank-canvas-button-radius",
+      "--blank-canvas-popover-radius",
+      "--blank-canvas-modal-radius",
+      "--blank-canvas-dashboard-block-radius",
+      "--blank-canvas-control-border",
+      "--blank-canvas-control-focus-border",
+      "--blank-canvas-control-focus-ring",
+      "--blank-canvas-caret-size"
+    ]),
+    elevation: Object.freeze([
+      "--blank-canvas-shadow-panel",
+      "--blank-canvas-shadow-card",
+      "--blank-canvas-shadow-card-hover",
+      "--blank-canvas-shadow-popover",
+      "--blank-canvas-shadow-modal"
+    ])
+  });
 
   const layoutModes = Object.freeze({
     classic: Object.freeze({
@@ -132,23 +203,58 @@
 
   function buildTokenMap(settings) {
     const useEditorialTokens = isEditorialPhaseActive(settings, PHASE_TYPOGRAPHY_RESET);
+    const useDashboardUiOverhaulTokens = isEditorialPhaseActive(settings, PHASE_DASHBOARD_UI_OVERHAUL);
     const sharedTokens = {
       "--blank-canvas-font-sans": '"Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
       "--blank-canvas-font-serif": '"Georgia", "Times New Roman", serif',
       "--blank-canvas-font-body": "var(--blank-canvas-font-sans)",
       "--blank-canvas-font-heading": "var(--blank-canvas-font-sans)",
+      "--blank-canvas-font-size-xs": "0.78rem",
+      "--blank-canvas-font-size-sm": "0.84rem",
+      "--blank-canvas-font-size-md": "0.96rem",
+      "--blank-canvas-font-size-lg": "1.1rem",
+      "--blank-canvas-font-size-display": "clamp(2.4rem, 4.5vw, 4.4rem)",
+      "--blank-canvas-line-height-tight": "1.2",
+      "--blank-canvas-line-height-base": "1.25",
       "--blank-canvas-space-1": "8px",
       "--blank-canvas-space-2": "12px",
       "--blank-canvas-space-3": "16px",
       "--blank-canvas-space-4": "20px",
       "--blank-canvas-space-5": "24px",
       "--blank-canvas-space-6": "32px",
+      "--blank-canvas-dashboard-page-width": "1480px",
+      "--blank-canvas-dashboard-column-gap": "56px",
       "--blank-canvas-radius-sm": "12px",
       "--blank-canvas-radius-md": "16px",
       "--blank-canvas-radius-lg": "20px",
+      "--blank-canvas-control-height": "54px",
+      "--blank-canvas-control-radius": "18px",
+      "--blank-canvas-button-radius": "18px",
+      "--blank-canvas-popover-radius": "18px",
+      "--blank-canvas-modal-radius": "28px",
+      "--blank-canvas-dashboard-block-radius": "20px",
+      "--blank-canvas-control-padding-x": "16px",
+      "--blank-canvas-control-padding-y": "13px",
+      "--blank-canvas-control-border": "rgba(48, 40, 31, 0.12)",
+      "--blank-canvas-control-focus-border": "rgba(53, 102, 93, 0.45)",
+      "--blank-canvas-control-focus-ring": "rgba(53, 102, 93, 0.12)",
+      "--blank-canvas-color-placeholder": "rgba(48, 40, 31, 0.42)",
+      "--blank-canvas-color-caret": "rgb(109, 101, 93)",
+      "--blank-canvas-color-overlay": "rgba(28, 24, 20, 0.52)",
+      "--blank-canvas-caret-size": "6px",
       "--blank-canvas-shadow-panel": "0 18px 40px rgba(15, 23, 42, 0.08)",
       "--blank-canvas-shadow-card": "0 6px 18px rgba(15, 23, 42, 0.05)",
-      "--blank-canvas-shadow-card-hover": "0 10px 22px rgba(15, 23, 42, 0.08)"
+      "--blank-canvas-shadow-card-hover": "0 10px 22px rgba(15, 23, 42, 0.08)",
+      "--blank-canvas-shadow-popover": "0 16px 38px rgba(32, 27, 21, 0.16)",
+      "--blank-canvas-shadow-modal": "0 24px 60px rgba(32, 27, 21, 0.18)",
+      "--blank-canvas-surface-card": "var(--blank-canvas-color-surface-elevated)",
+      "--blank-canvas-surface-control": "rgba(255, 255, 255, 0.82)",
+      "--blank-canvas-surface-button": "rgba(255, 255, 255, 0.72)",
+      "--blank-canvas-surface-button-subtle": "rgba(255, 255, 255, 0.68)",
+      "--blank-canvas-surface-button-muted": "rgba(255, 255, 255, 0.5)",
+      "--blank-canvas-surface-popover": "#ffffff",
+      "--blank-canvas-surface-modal": "var(--blank-canvas-color-surface-elevated)",
+      "--blank-canvas-page-background": "var(--blank-canvas-color-bg)"
     };
     const classicTokens = {
       "--blank-canvas-color-bg": "#fbfcff",
@@ -163,7 +269,8 @@
       "--blank-canvas-border-subtle": "rgba(15, 23, 42, 0.08)",
       "--blank-canvas-border-strong": "rgba(21, 62, 117, 0.1)",
       "--blank-canvas-border-hover": "rgba(21, 62, 117, 0.22)",
-      "--blank-canvas-border-danger": "rgba(176, 56, 23, 0.18)"
+      "--blank-canvas-border-danger": "rgba(176, 56, 23, 0.18)",
+      "--blank-canvas-page-background": "var(--blank-canvas-color-bg)"
     };
     const editorialTokens = {
       "--blank-canvas-color-bg": "#f6f1e8",
@@ -182,12 +289,98 @@
       "--blank-canvas-font-heading": "var(--blank-canvas-font-serif)",
       "--blank-canvas-shadow-panel": "0 18px 36px rgba(50, 42, 29, 0.08)",
       "--blank-canvas-shadow-card": "0 8px 18px rgba(50, 42, 29, 0.04)",
-      "--blank-canvas-shadow-card-hover": "0 12px 24px rgba(50, 42, 29, 0.06)"
+      "--blank-canvas-shadow-card-hover": "0 12px 24px rgba(50, 42, 29, 0.06)",
+      "--blank-canvas-page-background": `
+        radial-gradient(circle at 8% 92%, rgba(252, 232, 239, 0.84), transparent 34%),
+        radial-gradient(circle at 82% 4%, rgba(238, 180, 202, 0.22), transparent 36%),
+        linear-gradient(135deg, #fbe8ef 0%, var(--blank-canvas-color-bg) 52%, #f1d9e1 100%)
+      `
+    };
+    const dashboardUiOverhaulTokens = {
+      "--blank-canvas-color-bg": "#ffffff",
+      "--blank-canvas-color-surface": "#fdfcfb",
+      "--blank-canvas-color-surface-elevated": "#ffffff",
+      "--blank-canvas-color-surface-muted": "#f5f3f0",
+      "--blank-canvas-color-text": "#111111",
+      "--blank-canvas-color-muted": "#5d5d5d",
+      "--blank-canvas-color-accent": "#111111",
+      "--blank-canvas-color-warning": "#876233",
+      "--blank-canvas-color-danger": "#9d3f3f",
+      "--blank-canvas-border-subtle": "rgba(17, 17, 17, 0.12)",
+      "--blank-canvas-border-strong": "rgba(17, 17, 17, 0.18)",
+      "--blank-canvas-border-danger": "rgba(157, 63, 63, 0.22)",
+      "--blank-canvas-border-hover": "rgba(17, 17, 17, 0.28)",
+      "--blank-canvas-color-placeholder": "rgba(17, 17, 17, 0.4)",
+      "--blank-canvas-color-caret": "rgb(17, 17, 17)",
+      "--blank-canvas-color-overlay": "rgba(17, 17, 17, 0.46)",
+      "--blank-canvas-surface-card": "#ffffff",
+      "--blank-canvas-surface-control": "rgba(255, 255, 255, 0.92)",
+      "--blank-canvas-surface-button": "rgba(255, 255, 255, 0.88)",
+      "--blank-canvas-surface-button-subtle": "rgba(255, 255, 255, 0.68)",
+      "--blank-canvas-surface-button-muted": "rgba(245, 243, 240, 0.82)",
+      "--blank-canvas-surface-popover": "#ffffff",
+      "--blank-canvas-surface-modal": "#ffffff",
+      "--blank-canvas-font-body": '"Helvetica Neue", "Arial Nova", "Segoe UI", Arial, sans-serif',
+      "--blank-canvas-font-heading": '"Helvetica Neue", "Arial Nova", "Segoe UI", Arial, sans-serif',
+      "--blank-canvas-font-size-xs": "0.72rem",
+      "--blank-canvas-font-size-sm": "0.8rem",
+      "--blank-canvas-font-size-md": "0.92rem",
+      "--blank-canvas-font-size-lg": "1.05rem",
+      "--blank-canvas-font-size-display": "clamp(2.9rem, 5.8vw, 5.6rem)",
+      "--blank-canvas-line-height-tight": "1.06",
+      "--blank-canvas-dashboard-page-width": "1560px",
+      "--blank-canvas-dashboard-column-gap": "clamp(52px, 7vw, 112px)",
+      "--blank-canvas-dashboard-block-radius": "26px",
+      "--blank-canvas-control-radius": "18px",
+      "--blank-canvas-button-radius": "999px",
+      "--blank-canvas-popover-radius": "20px",
+      "--blank-canvas-modal-radius": "30px",
+      "--blank-canvas-control-border": "rgba(18, 60, 47, 0.16)",
+      "--blank-canvas-control-focus-border": "rgba(18, 60, 47, 0.46)",
+      "--blank-canvas-control-focus-ring": "rgba(18, 60, 47, 0.12)",
+      "--blank-canvas-shadow-panel": "0 22px 54px rgba(26, 33, 39, 0.08)",
+      "--blank-canvas-shadow-card": "0 10px 26px rgba(26, 33, 39, 0.06)",
+      "--blank-canvas-shadow-card-hover": "0 16px 34px rgba(26, 33, 39, 0.08)",
+      "--blank-canvas-shadow-popover": "0 18px 34px rgba(26, 33, 39, 0.1)",
+      "--blank-canvas-shadow-modal": "0 28px 64px rgba(26, 33, 39, 0.14)",
+      "--blank-canvas-page-background": `
+        radial-gradient(circle at 10% 90%, rgba(22, 28, 34, 0.05), transparent 28%),
+        radial-gradient(circle at 88% 8%, rgba(22, 28, 34, 0.04), transparent 30%),
+        radial-gradient(circle at 62% 72%, rgba(22, 28, 34, 0.025), transparent 38%),
+        linear-gradient(135deg, #ffffff 0%, #fbfaf8 52%, #f1efeb 100%)
+      `
     };
 
     return {
       ...sharedTokens,
-      ...(useEditorialTokens ? editorialTokens : classicTokens)
+      ...(useEditorialTokens ? editorialTokens : classicTokens),
+      ...(useDashboardUiOverhaulTokens ? dashboardUiOverhaulTokens : {})
+    };
+  }
+
+  function getTokenGroups() {
+    return Object.entries(TOKEN_GROUPS).reduce((result, [groupName, tokenNames]) => {
+      result[groupName] = tokenNames.slice();
+      return result;
+    }, {});
+  }
+
+  function getDesignTokenSnapshot(settings) {
+    const tokens = buildTokenMap(settings);
+    const tokenGroups = getTokenGroups();
+    const useDashboardUiOverhaulTokens = isEditorialPhaseActive(settings, PHASE_DASHBOARD_UI_OVERHAUL);
+    return {
+      tokenCount: Object.keys(tokens).length,
+      tokenGroups: Object.fromEntries(
+        Object.entries(tokenGroups).map(([groupName, tokenNames]) => [
+          groupName,
+          tokenNames.filter((tokenName) => Object.prototype.hasOwnProperty.call(tokens, tokenName)).length
+        ])
+      ),
+      hasControlTokens: Boolean(tokens["--blank-canvas-control-height"] && tokens["--blank-canvas-control-radius"]),
+      hasCaretTokens: Boolean(tokens["--blank-canvas-color-caret"] && tokens["--blank-canvas-caret-size"]),
+      hasOverlayTokens: Boolean(tokens["--blank-canvas-color-overlay"]),
+      visualMode: useDashboardUiOverhaulTokens ? "dashboard-ui-overhaul" : "base"
     };
   }
 
@@ -222,6 +415,7 @@
     PHASE_AGENDA_LIST,
     PHASE_ASSIGNMENT_HIERARCHY,
     PHASE_DASHBOARD_UI_OVERHAUL,
+    TOKEN_GROUPS,
     layoutModes,
     phaseDefinitions,
     normalizeLayoutMode,
@@ -236,6 +430,8 @@
     getActivePhaseIds,
     buildTokenMap,
     buildTokenCss,
+    getTokenGroups,
+    getDesignTokenSnapshot,
     applyDocumentTheme
   };
 })();

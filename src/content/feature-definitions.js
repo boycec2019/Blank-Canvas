@@ -17,6 +17,9 @@
     },
     getStyles(settings) {
       return root.uiPrimitives ? root.uiPrimitives.getStyles(settings) : "";
+    },
+    getSnapshot(settings) {
+      return root.uiPrimitives ? root.uiPrimitives.getSnapshot(settings) : null;
     }
   });
 

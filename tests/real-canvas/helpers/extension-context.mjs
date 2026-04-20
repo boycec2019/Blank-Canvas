@@ -7,6 +7,7 @@ export async function launchExtensionContext(options = {}) {
   const {
     extensionPath,
     storageState,
+    extensionSettings = null,
     headless = false,
     args = []
   } = options;
@@ -22,6 +23,14 @@ export async function launchExtensionContext(options = {}) {
 
   if (storageState) {
     await context.setStorageState(storageState);
+  }
+
+  if (extensionSettings && Object.keys(extensionSettings).length > 0) {
+    const worker = context.serviceWorkers()[0] || await context.waitForEvent("serviceworker");
+    await worker.evaluate(async (settings) => {
+      const storageArea = chrome.storage.sync || chrome.storage.local;
+      await storageArea.set(settings);
+    }, extensionSettings);
   }
 
   return {

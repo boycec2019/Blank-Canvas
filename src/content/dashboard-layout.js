@@ -113,6 +113,9 @@
       rowItems
     });
     syncContainerLayout(mount, host, layoutMode);
+    if (root.dashboardStyles && typeof root.dashboardStyles.syncClassCardAccents === "function") {
+      root.dashboardStyles.syncClassCardAccents(host.parentElement || document);
+    }
 
     const mountedSections = buildMountedSections(Boolean(mount.anchor));
     host.dataset.sectionOrder = mountedSections.join(",");

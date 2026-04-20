@@ -4,11 +4,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "build:react": "node scripts/build-react-bridge.mjs",
     "test:fixtures": "python tests/run_browser_tests.py",
     "test:real": "playwright test -c tests/real-canvas/playwright.config.mjs",
     "test:real:update": "playwright test -c tests/real-canvas/playwright.config.mjs --update-snapshots"
   },
   "devDependencies": {
-    "@playwright/test": "^1.53.0"
+    "@playwright/test": "^1.53.0",
+    "esbuild": "^0.28.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   }
 }

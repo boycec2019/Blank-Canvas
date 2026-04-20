@@ -56,10 +56,75 @@
           root.customAssignmentModal &&
             root.customAssignmentModal.getSnapshot().mounted
         )
+      },
+      {
+        id: "react-bridge",
+        label: "React bridge",
+        mounted: Boolean(root.react && root.react.available)
       }
     ];
 
     return surfaces;
+  }
+
+  function getDesignSystemSnapshot(settings, context, dashboardLayout, dashboardTodo) {
+    const tokenSnapshot = root.ui ? root.ui.getDesignTokenSnapshot(settings) : null;
+    const primitiveSnapshot = root.uiPrimitives ? root.uiPrimitives.getSnapshot(settings) : null;
+    const dashboardCss =
+      root.dashboardStyles && typeof root.dashboardStyles.getStyles === "function"
+        ? root.dashboardStyles.getStyles(settings)
+        : "";
+    const modalCss =
+      root.customAssignmentModal && typeof root.customAssignmentModal.getStyles === "function"
+        ? root.customAssignmentModal.getStyles(settings)
+        : "";
+    const documentElement = document.documentElement;
+    const body = document.body;
+    const viewportWidth = documentElement.clientWidth || window.innerWidth || 0;
+    const scrollWidth = Math.max(
+      documentElement.scrollWidth || 0,
+      body ? body.scrollWidth || 0 : 0
+    );
+    const phaseDashboardUiOverhaulEnabled = Boolean(settings.uiPhaseDashboardUiOverhaul);
+    const dashboardUiOverhaulVisualModeActive = Boolean(
+      root.ui &&
+        root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_DASHBOARD_UI_OVERHAUL) &&
+        context.pageType === "dashboard"
+    );
+
+    return {
+      phaseDashboardUiOverhaulEnabled,
+      dashboardUiOverhaulVisualModeActive,
+      dashboardTwoBlockLayoutActive: Boolean(
+        dashboardUiOverhaulVisualModeActive &&
+          dashboardLayout &&
+          dashboardLayout.sections &&
+          dashboardLayout.sections.join(",") === "assignments,classes-anchor"
+      ),
+      assignmentBlockMounted: Boolean(dashboardLayout && dashboardLayout.assignmentsMounted),
+      classesBlockMounted: Boolean(dashboardLayout && dashboardLayout.classesAnchorFound),
+      hasHorizontalOverflow: Boolean(viewportWidth && scrollWidth > viewportWidth + 1),
+      horizontalOverflowPx: viewportWidth ? Math.max(0, scrollWidth - viewportWidth) : 0,
+      primitivesStylesheetPresent: Boolean(primitiveSnapshot && primitiveSnapshot.stylesheetPresent),
+      primitiveCount: primitiveSnapshot ? primitiveSnapshot.primitiveCount : 0,
+      tokenCount: tokenSnapshot ? tokenSnapshot.tokenCount : 0,
+      tokenGroups: tokenSnapshot ? tokenSnapshot.tokenGroups : {},
+      hasControlTokens: Boolean(tokenSnapshot && tokenSnapshot.hasControlTokens),
+      hasCaretTokens: Boolean(tokenSnapshot && tokenSnapshot.hasCaretTokens),
+      hasOverlayTokens: Boolean(tokenSnapshot && tokenSnapshot.hasOverlayTokens),
+      dashboardPrimitiveAdoption: {
+        usesButtonSurfaceTokens: dashboardCss.includes("--blank-canvas-surface-button"),
+        usesSharedSurfaceTokens: dashboardCss.includes("--blank-canvas-color-surface"),
+        usesDashboardUiOverhaulSelector: dashboardCss.includes("blank-canvas--phase-dashboard-ui-overhaul")
+      },
+      modalPrimitiveAdoption: {
+        usesControlTokens: modalCss.includes("--blank-canvas-control-height"),
+        usesCaretTokens: modalCss.includes("--blank-canvas-color-caret"),
+        usesPlaceholderTokens: modalCss.includes("--blank-canvas-color-placeholder"),
+        usesPopoverTokens: modalCss.includes("--blank-canvas-shadow-popover"),
+        usesDashboardUiOverhaulSelector: modalCss.includes("blank-canvas--phase-dashboard-ui-overhaul")
+      }
+    };
   }
 
   function buildReport(settings) {
@@ -82,6 +147,14 @@
     const customAssignmentModal = root.customAssignmentModal
       ? root.customAssignmentModal.getSnapshot()
       : null;
+    const reactBridge = root.react && typeof root.react.getSnapshot === "function"
+      ? root.react.getSnapshot()
+      : {
+          available: false,
+          mountedCount: 0,
+          mountIds: [],
+          version: null
+        };
     const featureRegistry = root.featureRegistry ? root.featureRegistry.getSnapshot() : null;
     const cssRules = root.ruleEngine.getApplicableCssRules(settings, context).map((rule) => {
       const selectors = root.ruleEngine.resolveSelectors(rule, settings, context);
@@ -141,6 +214,8 @@
       dashboardLayout,
       dashboardTodo,
       customAssignmentModal,
+      reactBridge,
+      designSystem: getDesignSystemSnapshot(settings, context, dashboardLayout, dashboardTodo),
       mountedFeatureIds: featureRegistry ? featureRegistry.mountedFeatureIds : [],
       registeredFeatureIds: featureRegistry ? featureRegistry.registeredFeatureIds : [],
       featureSnapshots: featureRegistry ? featureRegistry.featureSnapshots : {},

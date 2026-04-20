@@ -118,36 +118,59 @@
   }
 
   function findSecondaryNavItems() {
-    const navAnchors = Array.from(
-      document.querySelectorAll("#menu a, .ic-app-header a, nav[aria-label] a")
+    const navControls = Array.from(
+      document.querySelectorAll(
+        "#menu a, #menu button, .ic-app-header a, .ic-app-header button, nav[aria-label] a, nav[aria-label] button"
+      )
     );
+    const secondaryNames = new Set(["groups", "history", "search", "spark", "help"]);
 
-    return navAnchors.filter((anchor) => {
-      const href = (anchor.getAttribute("href") || "").toLowerCase();
-      const text = (anchor.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+    function getControlLabel(control) {
+      return [
+        control.id || "",
+        control.getAttribute("href") || "",
+        control.getAttribute("aria-label") || "",
+        control.getAttribute("title") || "",
+        control.textContent || ""
+      ]
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
 
-      if (href.includes("/groups") || text === "groups") {
+    function isSecondaryControl(control) {
+      const label = getControlLabel(control);
+
+      if (/global_nav_(groups|history|search|spark|help)/i.test(control.id || "")) {
         return true;
       }
 
-      if (href.includes("/history") || text === "history") {
+      if (/\/(groups|history|search|help)(\/|$|\?)/i.test(label)) {
         return true;
       }
 
-      if (href.includes("/search") || text === "search") {
+      if (secondaryNames.has(label)) {
         return true;
       }
 
-      if (text.includes("spark")) {
-        return true;
-      }
-
-      if (text === "help") {
+      if (/\b(groups|history|search|spark|help)\b/i.test(label)) {
         return true;
       }
 
       return false;
-    });
+    }
+
+    return root.utils.uniqueElements(
+      navControls
+        .filter(isSecondaryControl)
+        .map(
+          (control) =>
+            control.closest("#menu li, .ic-app-header__menu-list-item, [role='listitem']") ||
+            control.closest("li") ||
+            control
+        )
+    );
   }
 
   function getCourseNavLinkSelector() {

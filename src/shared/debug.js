@@ -6,6 +6,40 @@
     entries: []
   };
 
+  function getErrorText(value) {
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    if (value instanceof Error) {
+      return `${value.name || ""} ${value.message || ""} ${value.stack || ""}`;
+    }
+
+    if (typeof value === "object") {
+      return [value.name, value.message, value.stack, value.error]
+        .filter(Boolean)
+        .map((part) => String(part))
+        .join(" ");
+    }
+
+    return String(value);
+  }
+
+  function isExtensionContextInvalidatedError(value) {
+    return /extension context invalidated/i.test(getErrorText(value));
+  }
+
+  function shouldSuppressConsole(level, message, details) {
+    return (
+      (level === "warn" || level === "error") &&
+      (isExtensionContextInvalidatedError(message) || isExtensionContextInvalidatedError(details))
+    );
+  }
+
   function record(level, scope, message, details) {
     const entry = {
       timestamp: new Date().toISOString(),
@@ -21,6 +55,10 @@
     }
 
     if (!state.enabled && level === "log") {
+      return;
+    }
+
+    if (shouldSuppressConsole(level, message, details)) {
       return;
     }
 
@@ -51,6 +89,7 @@
     },
     clear() {
       state.entries.length = 0;
-    }
+    },
+    isExtensionContextInvalidatedError
   };
 })();
