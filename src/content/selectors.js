@@ -1,15 +1,22 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
 
-  function isCanvasLikePage() {
-    const hostname = window.location.hostname.toLowerCase();
-    const hasCanvasHostname = hostname.includes("instructure") || hostname.includes("canvas");
-    const hasCanvasChrome = Boolean(
-      document.querySelector("#menu") &&
-      document.querySelector("#application, #dashboard, .ic-app")
-    );
+  function isCanvasHostname(hostname = window.location.hostname) {
+    const normalizedHostname = String(hostname || "").trim().toLowerCase();
+    if (!normalizedHostname) {
+      return false;
+    }
 
-    return hasCanvasHostname || hasCanvasChrome;
+    return (
+      normalizedHostname === "canvas" ||
+      normalizedHostname.startsWith("canvas.") ||
+      normalizedHostname.includes(".canvas.") ||
+      normalizedHostname.endsWith(".instructure.com")
+    );
+  }
+
+  function isCanvasLikePage() {
+    return isCanvasHostname(window.location.hostname);
   }
 
   function getPageContext() {
@@ -273,6 +280,7 @@
   }
 
   root.canvas = {
+    isCanvasHostname,
     isCanvasLikePage,
     getPageContext,
     findDashboardSearchTargets,

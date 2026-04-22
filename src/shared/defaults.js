@@ -9,7 +9,7 @@
     uiPhaseLeftRailSimplification: true,
     uiPhaseAgendaList: true,
     uiPhaseAssignmentHierarchy: true,
-    uiPhaseDashboardUiOverhaul: false,
+    uiPhaseDashboardUiOverhaul: true,
     uiPhaseFocusedPages: false,
     uiPhaseMobilePolish: false,
     uiPhaseMotionPolish: false,

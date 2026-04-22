@@ -27,6 +27,11 @@ body {
   gap: 12px;
 }
 
+.popup-header-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
 .popup-header h1 {
   margin: 4px 0 0;
   font-size: 1.45rem;

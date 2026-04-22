@@ -53,6 +53,10 @@
     return writeIgnoredAssignmentKeys(keys.filter((value) => value !== normalizedKey));
   }
 
+  async function clearIgnoredAssignmentKeys() {
+    return writeIgnoredAssignmentKeys([]);
+  }
+
   function onChanged(listener) {
     const handler = (changes, areaName) => {
       const expectedArea = chrome.storage.sync ? "sync" : "local";
@@ -71,6 +75,7 @@
   }
 
   root.ignoredAssignments = {
+    clearIgnoredAssignmentKeys,
     STORAGE_KEY,
     ignoreAssignmentKey,
     listIgnoredAssignmentKeys,

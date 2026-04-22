@@ -11,30 +11,14 @@
       <header class="hero">
         <div>
           <p class="eyebrow">Blank Canvas</p>
-          <h1>Minimalist Canvas controls</h1>
+          <h1>Blank Canvas settings</h1>
           <p class="lede">
-            Tune what stays visible, preview selector matches, and keep a small debugging surface ready when Canvas updates.
+            Tune the public Blank Canvas experience without touching the internal rollout configuration.
           </p>
         </div>
       </header>
 
       <form id="settings-form" class="settings-grid">
-        <section class="card">
-          <h2>UI rollout</h2>
-
-          <label class="stacked-field" for="uiLayoutMode">
-            <strong>Layout mode</strong>
-            <small>Select which UI system Blank Canvas should prepare on Canvas pages.</small>
-          </label>
-          <select id="uiLayoutMode" name="uiLayoutMode"></select>
-
-          <div class="debug-note phase-note">
-            <p>The redesign phases stay behind temporary switches so we can ship, compare, and debug each change independently.</p>
-          </div>
-
-          <div id="ui-phase-settings" class="phase-settings"></div>
-        </section>
-
         <section class="card">
           <h2>Core cleanup</h2>
 
@@ -128,31 +112,10 @@
             <p>Right-click-hidden course tabs can be restored here without resetting the rest of your settings.</p>
             <button type="button" id="reset-hidden-course-tabs" class="secondary">Restore hidden course tabs</button>
           </div>
-        </section>
-
-        <section class="card">
-          <h2>Debugging</h2>
-
-          <label class="setting-row">
-            <span>
-              <strong>Debug mode</strong>
-              <small>Turns on structured logs in the extension context.</small>
-            </span>
-            <input type="checkbox" name="debugMode">
-          </label>
-
-          <label class="setting-row">
-            <span>
-              <strong>Preview mode</strong>
-              <small>Outlines matched elements instead of hiding them.</small>
-            </span>
-            <input type="checkbox" name="previewMode">
-          </label>
 
           <div class="debug-note">
-            <p>
-              If a selector breaks, turn on preview mode, run diagnostics from the popup, and compare the matched nodes in DevTools before changing the rule.
-            </p>
+            <p>Hidden dashboard assignments can be restored here if you right-clicked to ignore them earlier.</p>
+            <button type="button" id="reset-hidden-assignments" class="secondary">Restore hidden assignments</button>
           </div>
         </section>
       </form>
@@ -174,6 +137,7 @@
     <script src="../shared/course-nav-utils.js"></script>
     <script src="../shared/storage.js"></script>
     <script src="../shared/settings-ui.js"></script>
+    <script src="../shared/ignored-assignments.js"></script>
     <script src="./options.js"></script>
   </body>
 </html>

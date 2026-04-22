@@ -29,6 +29,19 @@
       ${EDITORIAL_PHASE_SELECTOR} .ic-Dashboard-header__hero,
       ${EDITORIAL_PHASE_SELECTOR} .ic-Action-header,
       ${EDITORIAL_PHASE_SELECTOR} .ic-Action-header__Layout,
+      ${EDITORIAL_PHASE_SELECTOR} .ic-app-nav-toggle-and-crumbs,
+      ${EDITORIAL_PHASE_SELECTOR} .ic-app-crumbs,
+      ${EDITORIAL_PHASE_SELECTOR} .ic-app-crumbs--secondary,
+      ${EDITORIAL_PHASE_SELECTOR} .ic-app-main-content__secondary,
+      ${EDITORIAL_PHASE_SELECTOR} .module-sequence-footer,
+      ${EDITORIAL_PHASE_SELECTOR} .module-sequence-footer-content,
+      ${EDITORIAL_PHASE_SELECTOR} .module-sequence-footer-left,
+      ${EDITORIAL_PHASE_SELECTOR} .module-sequence-footer-right,
+      ${EDITORIAL_PHASE_SELECTOR} #breadcrumbs,
+      ${EDITORIAL_PHASE_SELECTOR} [data-testid='breadcrumbs'],
+      ${EDITORIAL_PHASE_SELECTOR} .header-bar,
+      ${EDITORIAL_PHASE_SELECTOR} .header-bar-outer-container,
+      ${EDITORIAL_PHASE_SELECTOR} .page-title,
       ${EDITORIAL_PHASE_SELECTOR} #dashboard_header_container,
       ${EDITORIAL_PHASE_SELECTOR} #dashboard > header,
       ${EDITORIAL_PHASE_SELECTOR} #dashboard > div:first-child {
@@ -88,16 +101,6 @@
         font-family: var(--blank-canvas-font-body) !important;
       }
 
-      ${EDITORIAL_PHASE_SELECTOR} input[type='search'],
-      ${EDITORIAL_PHASE_SELECTOR} input[placeholder*='Search'],
-      ${EDITORIAL_PHASE_SELECTOR} input[placeholder*='search'] {
-        border: 1px solid var(--blank-canvas-border-strong) !important;
-        border-radius: 14px !important;
-        background: rgba(255, 255, 255, 0.62) !important;
-        box-shadow: none !important;
-        color: var(--blank-canvas-color-text) !important;
-      }
-
       ${EDITORIAL_PHASE_SELECTOR} #DashboardCard_Container .ic-DashboardCard,
       ${EDITORIAL_PHASE_SELECTOR} .ic-DashboardCard {
         background: var(--blank-canvas-color-surface-elevated) !important;
@@ -152,6 +155,54 @@
       ${EDITORIAL_PHASE_SELECTOR} .ic-DashboardCard:focus-within {
         box-shadow: 0 14px 30px rgba(50, 42, 29, 0.06) !important;
         border-color: var(--blank-canvas-border-hover) !important;
+      }
+
+      ${EDITORIAL_PHASE_SELECTOR} .item-group-container,
+      ${EDITORIAL_PHASE_SELECTOR} #ag-list,
+      ${EDITORIAL_PHASE_SELECTOR} .item-group-condensed,
+      ${EDITORIAL_PHASE_SELECTOR} .assignment_group,
+      ${EDITORIAL_PHASE_SELECTOR} .collectionViewItems.ig-list {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      ${EDITORIAL_PHASE_SELECTOR} .item-group-container,
+      ${EDITORIAL_PHASE_SELECTOR} #ag-list {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+
+      ${EDITORIAL_PHASE_SELECTOR} .item-group-condensed {
+        margin-bottom: 24px !important;
+      }
+
+      ${EDITORIAL_PHASE_SELECTOR} .assignment_group {
+        margin: 0 !important;
+      }
+
+      ${EDITORIAL_PHASE_SELECTOR} .ig-header {
+        background: rgba(255, 255, 255, 0.68) !important;
+        border: 1px solid var(--blank-canvas-border-subtle) !important;
+        border-bottom: none !important;
+        border-radius: 18px 18px 0 0 !important;
+        box-shadow: none !important;
+      }
+
+      ${EDITORIAL_PHASE_SELECTOR} .assignment-list {
+        background: rgba(255, 255, 255, 0.52) !important;
+        border: 1px solid var(--blank-canvas-border-subtle) !important;
+        border-top: none !important;
+        border-radius: 0 0 18px 18px !important;
+        box-shadow: none !important;
+      }
+
+      ${EDITORIAL_PHASE_SELECTOR} .ig-row,
+      ${EDITORIAL_PHASE_SELECTOR} .ig-row__layout {
+        background: transparent !important;
+        box-shadow: none !important;
       }
     `;
   }
@@ -370,6 +421,8 @@
       ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header {
         border-right: 1px solid ${railBorder} !important;
         color: ${railInk} !important;
+        container-type: inline-size !important;
+        overflow-x: hidden !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list,
@@ -463,12 +516,54 @@
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item__text,
       ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-link span {
-        font-size: 0.93rem !important;
+        font-size: 0.82rem !important;
         letter-spacing: 0.01em !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item__text {
         display: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded #menu,
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded .ic-app-header {
+        width: 88px !important;
+        min-width: 88px !important;
+        max-width: 88px !important;
+        overflow-x: hidden !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded #menu li,
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded .ic-app-header__menu-list-item {
+        justify-content: center !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded #menu .menu-item-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded #menu .menu-item-icon-container,
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded #menu .ic-app-header__menu-list-item > a,
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded #menu .ic-app-header__menu-list-item > button,
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded .ic-app-header__menu-list-link {
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 2px !important;
+        width: calc(100% - 8px) !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 50px !important;
+        padding: 4px 4px !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} body.primary-nav-expanded #menu .menu-item__text {
+        display: block !important;
+        flex: 0 1 auto !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        opacity: 1 !important;
+        text-align: center !important;
+        white-space: normal !important;
+        line-height: 1 !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container,
@@ -506,14 +601,24 @@
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-icon-container.ic-app-header__menu-list-item--active,
-      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container.ic-app-header__menu-list-item--active,
-      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button,
-      ${LEFT_RAIL_PHASE_SELECTOR} .ic-app-header__menu-list-item--active {
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > button {
         background: ${railSelectedSurface} !important;
         background-color: ${railSelectedSurface} !important;
         background-image: none !important;
         border-radius: 14px !important;
-        border-left: 2px solid ${railMarker} !important;
+        border-left: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container.ic-app-header__menu-list-item--active,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu li.ic-app-header__menu-list-item.ic-app-header__menu-list-item--active,
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border-left: none !important;
         box-shadow: none !important;
         outline: none !important;
       }
@@ -576,10 +681,10 @@
       }
 
       ${routeSelectedNavSelectors} {
-        background: ${railSelectedSurface} !important;
-        background-color: ${railSelectedSurface} !important;
+        background: transparent !important;
+        background-color: transparent !important;
         background-image: none !important;
-        border-left: 2px solid ${railMarker} !important;
+        border-left: none !important;
         border-radius: 14px !important;
         box-shadow: none !important;
       }
@@ -615,9 +720,15 @@
         background: ${railSelectedSurface} !important;
         background-color: ${railSelectedSurface} !important;
         background-image: linear-gradient(0deg, ${railSelectedSurface}, ${railSelectedSurface}) !important;
-        border-left: 2px solid ${railMarker} !important;
+        border-left: none !important;
         border-radius: 14px !important;
         box-shadow: none !important;
+      }
+
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .menu-item-container.ic-app-header__menu-list-item--active:has(#global_nav_dashboard_link),
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item.ic-app-header__menu-list-item--active:has(#global_nav_dashboard_link),
+      ${LEFT_RAIL_PHASE_SELECTOR} #menu li.ic-app-header__menu-list-item.ic-app-header__menu-list-item--active:has(#global_nav_dashboard_link) {
+        border-left: none !important;
       }
 
       ${LEFT_RAIL_PHASE_SELECTOR} #menu .ic-app-header__menu-list-item--active > a[id^='global_nav_'] > div.menu-item-icon-container::after,

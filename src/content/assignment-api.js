@@ -4,6 +4,7 @@
   const DEFAULT_FUTURE_DAYS = 120;
   const DEFAULT_PAGE_SIZE = 100;
   const MAX_PAGES = 3;
+  const AUTH_ERROR_CODE = "canvas-auth-required";
 
   function toIsoDate(rawDate) {
     return rawDate.toISOString().slice(0, 10);
@@ -40,6 +41,49 @@
 
     const match = nextEntry.match(/<([^>]+)>/);
     return match ? match[1] : null;
+  }
+
+  function isLoginUrl(rawUrl = "") {
+    try {
+      const url = new URL(String(rawUrl || ""), window.location.origin);
+      return /^\/login(\/|$)/i.test(url.pathname);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function createCanvasAuthError(message, details = {}) {
+    const error = new Error(message);
+    error.code = AUTH_ERROR_CODE;
+    error.isCanvasAuthError = true;
+    Object.assign(error, details);
+    return error;
+  }
+
+  function isCanvasAuthError(error) {
+    return Boolean(error && (error.isCanvasAuthError || error.code === AUTH_ERROR_CODE));
+  }
+
+  function isAuthResponse(response) {
+    if (!response) {
+      return false;
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return true;
+    }
+
+    if (isLoginUrl(response.url)) {
+      return true;
+    }
+
+    const contentType = String(
+      response.headers && typeof response.headers.get === "function"
+        ? response.headers.get("Content-Type") || ""
+        : ""
+    ).toLowerCase();
+
+    return Boolean(response.redirected && contentType.includes("text/html"));
   }
 
   function isIncompleteSubmission(submissions) {
@@ -146,6 +190,21 @@
         }
       });
 
+      if (isAuthResponse(response)) {
+        const authError = createCanvasAuthError("Canvas planner request requires an active session.", {
+          status: response.status,
+          url: response.url || nextUrl
+        });
+        if (root.authNotice && typeof root.authNotice.reportAuthIssue === "function") {
+          root.authNotice.reportAuthIssue({
+            source: "planner-api",
+            status: response.status,
+            url: response.url || nextUrl
+          });
+        }
+        throw authError;
+      }
+
       if (!response.ok) {
         throw new Error(`Canvas planner request failed with ${response.status}.`);
       }
@@ -167,6 +226,10 @@
       nextUrl = readNextLink(response.headers.get("Link"));
     }
 
+    if (root.authNotice && typeof root.authNotice.clearAuthIssue === "function") {
+      root.authNotice.clearAuthIssue();
+    }
+
     return root.assignmentFormatting.decoratePendingAssignments(collectedItems, {
       ...options,
       courseNames
@@ -175,7 +238,9 @@
 
   root.assignmentApi = {
     buildPlannerItemsUrl,
+    createCanvasAuthError,
     fetchPendingAssignmentsFromApi,
+    isCanvasAuthError,
     mapPlannerItemToPendingAssignment,
     readNextLink
   };

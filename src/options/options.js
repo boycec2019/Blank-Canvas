@@ -4,9 +4,8 @@
   const saveButton = document.getElementById("save-settings");
   const resetButton = document.getElementById("reset-settings");
   const resetHiddenCourseTabsButton = document.getElementById("reset-hidden-course-tabs");
+  const resetHiddenAssignmentsButton = document.getElementById("reset-hidden-assignments");
   const saveStatus = document.getElementById("save-status");
-  const uiLayoutModeField = document.getElementById("uiLayoutMode");
-  const uiPhaseSettings = document.getElementById("ui-phase-settings");
 
   function setStatus(message) {
     saveStatus.textContent = message;
@@ -28,11 +27,6 @@
   }
 
   async function initialize() {
-    root.settingsUi.renderLayoutModeOptions(uiLayoutModeField, {
-      includeDescription: true
-    });
-    root.settingsUi.renderPhaseControls(uiPhaseSettings);
-
     const settings = await root.storage.getSettings();
     root.debug.setFlags(settings);
     root.settingsUi.applyTheme(settings);
@@ -52,12 +46,26 @@
       setStatus("Defaults restored.");
     });
 
-    resetHiddenCourseTabsButton.addEventListener("click", async () => {
-      await root.storage.setSettings({
-        hiddenCourseNavItems: {}
+    if (resetHiddenCourseTabsButton) {
+      resetHiddenCourseTabsButton.addEventListener("click", async () => {
+        await root.storage.setSettings({
+          hiddenCourseNavItems: {}
+        });
+        setStatus("Hidden course tabs restored.");
       });
-      setStatus("Hidden course tabs restored.");
-    });
+    }
+
+    if (resetHiddenAssignmentsButton) {
+      resetHiddenAssignmentsButton.addEventListener("click", async () => {
+        if (!root.ignoredAssignments || typeof root.ignoredAssignments.clearIgnoredAssignmentKeys !== "function") {
+          setStatus("Hidden assignment restore is unavailable.");
+          return;
+        }
+
+        await root.ignoredAssignments.clearIgnoredAssignmentKeys();
+        setStatus("Hidden assignments restored.");
+      });
+    }
   }
 
   initialize().catch((error) => {

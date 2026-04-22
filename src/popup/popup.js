@@ -5,12 +5,10 @@
   const diagnosticsOutput = document.getElementById("diagnostics-output");
   const diagnosticsButton = document.getElementById("run-diagnostics");
   const resetButton = document.getElementById("reset-settings");
-  const openOptionsButton = document.getElementById("open-options");
+  const openSettingsButton = document.getElementById("open-settings");
   const refreshTodoButton = document.getElementById("refresh-todo");
   const todoSummary = document.getElementById("todo-summary");
   const todoList = document.getElementById("todo-list");
-  const uiLayoutModeField = document.getElementById("uiLayoutMode");
-  const uiPhaseSummary = document.getElementById("ui-phase-summary");
   let todoTabId = null;
   let todoTabIsCanvas = false;
   let currentSettings = { ...root.defaults };
@@ -33,15 +31,13 @@
   }
 
   function setStatus(message) {
-    statusText.textContent = message;
+    if (statusText) {
+      statusText.textContent = message;
+    }
   }
 
   function applySettingsToFields(settings) {
     root.settingsUi.applySettingsToElements(fields, settings);
-  }
-
-  function updateUiPhaseSummary(settings) {
-    uiPhaseSummary.textContent = root.settingsUi.summarizeActivePhases(settings);
   }
 
   async function getActiveTab() {
@@ -76,6 +72,19 @@
     });
   }
 
+  function openSettingsPage() {
+    const environment = getPopupEnvironment();
+    if (typeof environment.openOptionsPage === "function") {
+      return environment.openOptionsPage();
+    }
+
+    if (chrome.runtime && typeof chrome.runtime.openOptionsPage === "function") {
+      return chrome.runtime.openOptionsPage();
+    }
+
+    return Promise.reject(new Error("Options page is unavailable."));
+  }
+
   async function syncField(field) {
     const nextValue = field.type === "checkbox" ? field.checked : field.value;
     await root.storage.setSettings({
@@ -86,7 +95,6 @@
       [field.name]: nextValue
     });
     root.settingsUi.applyTheme(currentSettings);
-    updateUiPhaseSummary(currentSettings);
     setStatus("Settings saved.");
   }
 
@@ -283,11 +291,15 @@
 
   async function runDiagnostics() {
     setStatus("Running diagnostics...");
-    diagnosticsOutput.textContent = "Collecting data from the current tab...";
+    if (diagnosticsOutput) {
+      diagnosticsOutput.textContent = "Collecting data from the current tab...";
+    }
 
     const activeTab = await getActiveTab();
     if (!activeTab || !activeTab.id) {
-      diagnosticsOutput.textContent = "No active tab found.";
+      if (diagnosticsOutput) {
+        diagnosticsOutput.textContent = "No active tab found.";
+      }
       setStatus("Could not find an active tab.");
       return;
     }
@@ -296,54 +308,64 @@
       const response = await requestTabMessage(activeTab.id, {
         type: "blank-canvas:diagnostics"
       });
-      diagnosticsOutput.textContent = formatDiagnostics(response);
+      if (diagnosticsOutput) {
+        diagnosticsOutput.textContent = formatDiagnostics(response);
+      }
       setStatus("Diagnostics complete.");
     } catch (error) {
-      diagnosticsOutput.textContent = "Open an active Canvas page, then run diagnostics again.";
+      if (diagnosticsOutput) {
+        diagnosticsOutput.textContent = "Open an active Canvas page, then run diagnostics again.";
+      }
       setStatus("No Blank Canvas content script found on this tab.");
     }
   }
 
   async function initialize() {
-    root.settingsUi.renderLayoutModeOptions(uiLayoutModeField, {
-      includeDescription: false
-    });
-
     currentSettings = await root.storage.getSettings();
     root.debug.setFlags(currentSettings);
     root.settingsUi.applyTheme(currentSettings);
     applySettingsToFields(currentSettings);
-    updateUiPhaseSummary(currentSettings);
 
     fields.forEach((field) => {
       field.addEventListener("change", () => {
         syncField(field).catch((error) => {
           setStatus("Failed to save settings.");
-          diagnosticsOutput.textContent = String(error);
+          if (diagnosticsOutput) {
+            diagnosticsOutput.textContent = String(error);
+          }
         });
       });
     });
 
-    diagnosticsButton.addEventListener("click", () => {
-      runDiagnostics().catch((error) => {
-        setStatus("Diagnostics failed.");
-        diagnosticsOutput.textContent = String(error);
+    if (diagnosticsButton) {
+      diagnosticsButton.addEventListener("click", () => {
+        runDiagnostics().catch((error) => {
+          setStatus("Diagnostics failed.");
+          if (diagnosticsOutput) {
+            diagnosticsOutput.textContent = String(error);
+          }
+        });
       });
-    });
+    }
 
     resetButton.addEventListener("click", async () => {
       await root.storage.resetSettings();
       currentSettings = await root.storage.getSettings();
       root.settingsUi.applyTheme(currentSettings);
       applySettingsToFields(currentSettings);
-      updateUiPhaseSummary(currentSettings);
-      diagnosticsOutput.textContent = "Settings reset to defaults.";
+      if (diagnosticsOutput) {
+        diagnosticsOutput.textContent = "Settings reset to defaults.";
+      }
       setStatus("Defaults restored.");
     });
 
-    openOptionsButton.addEventListener("click", () => {
-      chrome.runtime.openOptionsPage();
-    });
+    if (openSettingsButton) {
+      openSettingsButton.addEventListener("click", () => {
+        openSettingsPage().catch((error) => {
+          setStatus(`Settings unavailable: ${String(error)}`);
+        });
+      });
+    }
 
     refreshTodoButton.addEventListener("click", () => {
       loadPendingAssignments().catch((error) => {
@@ -373,6 +395,8 @@
 
   initialize().catch((error) => {
     setStatus("Popup failed to load.");
-    diagnosticsOutput.textContent = String(error);
+    if (diagnosticsOutput) {
+      diagnosticsOutput.textContent = String(error);
+    }
   });
 })();

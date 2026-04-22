@@ -5,19 +5,84 @@
   const hasChromeStorage =
     typeof chrome !== "undefined" && chrome.storage && (chrome.storage.sync || chrome.storage.local);
   const storageArea = hasChromeStorage ? chrome.storage.sync || chrome.storage.local : null;
+
+  function isCanvasHostname(hostname = window.location.hostname) {
+    const normalizedHostname = String(hostname || "").trim().toLowerCase();
+    if (!normalizedHostname) {
+      return false;
+    }
+
+    return (
+      normalizedHostname === "canvas" ||
+      normalizedHostname.startsWith("canvas.") ||
+      normalizedHostname.includes(".canvas.") ||
+      normalizedHostname.endsWith(".instructure.com")
+    );
+  }
   
   function getBootstrapContext() {
     return {
+      hostname: window.location.hostname,
       courseId: root.courseNavUtils ? root.courseNavUtils.getCourseIdFromPath() : ""
     };
   }
 
-  function buildCriticalCss(settings, context = getBootstrapContext()) {
-    if (!settings || !settings.enabled || settings.previewMode) {
+  function buildThemePreloadCss(settings) {
+    if (
+      !root.ui ||
+      !root.ui.isEditorialPhaseActive(settings, root.ui.PHASE_TYPOGRAPHY_RESET)
+    ) {
       return "";
     }
 
-    const blocks = [];
+    return `
+      html[${ROOT_ATTRIBUTE}="true"] {
+${root.ui.buildTokenCss(settings)}
+      }
+
+      html[${ROOT_ATTRIBUTE}="true"],
+      html[${ROOT_ATTRIBUTE}="true"] body {
+        background: var(--blank-canvas-page-background) !important;
+        background-attachment: fixed !important;
+        color: var(--blank-canvas-color-text) !important;
+      }
+
+      html[${ROOT_ATTRIBUTE}="true"] #application,
+      html[${ROOT_ATTRIBUTE}="true"] #dashboard_container,
+      html[${ROOT_ATTRIBUTE}="true"] .ic-DashboardLayout,
+      html[${ROOT_ATTRIBUTE}="true"] .ic-DashboardLayout__Main,
+      html[${ROOT_ATTRIBUTE}="true"] .ic-Layout-wrapper,
+      html[${ROOT_ATTRIBUTE}="true"] .ic-Layout-contentMain,
+      html[${ROOT_ATTRIBUTE}="true"] #dashboard,
+      html[${ROOT_ATTRIBUTE}="true"] #DashboardCard_Container {
+        background: transparent !important;
+      }
+
+      html[${ROOT_ATTRIBUTE}="true"] #menu,
+      html[${ROOT_ATTRIBUTE}="true"] .ic-app-header,
+      html[${ROOT_ATTRIBUTE}="true"] .ic-app-header__main-navigation,
+      html[${ROOT_ATTRIBUTE}="true"] .ic-app-header__menu-list {
+        background: #fffaf7 !important;
+        background-color: #fffaf7 !important;
+        background-image: none !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      html[${ROOT_ATTRIBUTE}="true"] #menu,
+      html[${ROOT_ATTRIBUTE}="true"] .ic-app-header {
+        border-right: 1px solid rgba(18, 60, 47, 0.12) !important;
+      }
+    `;
+  }
+
+  function buildCriticalCss(settings, context = getBootstrapContext()) {
+    const hostname = context && context.hostname ? context.hostname : window.location.hostname;
+    if (!settings || !settings.enabled || settings.previewMode || !isCanvasHostname(hostname)) {
+      return "";
+    }
+
+    const blocks = [buildThemePreloadCss(settings)];
 
     if (settings.hideRightSidebar) {
       blocks.push(`
@@ -109,21 +174,23 @@
     ensureStyle("");
   }
 
-  document.documentElement.setAttribute(ROOT_ATTRIBUTE, "true");
-  ensureStyle(buildCriticalCss(root.defaults));
+  if (isCanvasHostname()) {
+    document.documentElement.setAttribute(ROOT_ATTRIBUTE, "true");
+    ensureStyle(buildCriticalCss(root.defaults));
 
-  if (storageArea) {
-    storageArea
-      .get(root.defaults)
-      .then((storedValues) => {
-        const settings = root.storage
-          ? root.storage.mergeSettings(storedValues)
-          : { ...root.defaults, ...storedValues };
-        ensureStyle(buildCriticalCss(settings));
-      })
-      .catch(() => {
-        ensureStyle(buildCriticalCss(root.defaults));
-      });
+    if (storageArea) {
+      storageArea
+        .get(root.defaults)
+        .then((storedValues) => {
+          const settings = root.storage
+            ? root.storage.mergeSettings(storedValues)
+            : { ...root.defaults, ...storedValues };
+          ensureStyle(buildCriticalCss(settings));
+        })
+        .catch(() => {
+          ensureStyle(buildCriticalCss(root.defaults));
+        });
+    }
   }
 
   root.bootstrap = {

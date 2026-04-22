@@ -1,6 +1,6 @@
 (() => {
   const root = globalThis.BlankCanvas || (globalThis.BlankCanvas = {});
-  const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const createElement =
     root.dom && typeof root.dom.createElement === "function"
       ? root.dom.createElement
@@ -34,7 +34,7 @@
   function buildCalendarDays(monthDate) {
     const monthStart = startOfMonth(monthDate);
     const gridStart = new Date(monthStart);
-    const weekdayOffset = (monthStart.getDay() + 6) % 7;
+    const weekdayOffset = monthStart.getDay();
     gridStart.setDate(monthStart.getDate() - weekdayOffset);
 
     return Array.from({ length: 42 }, (_, index) => {

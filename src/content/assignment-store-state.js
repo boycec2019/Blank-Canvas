@@ -22,7 +22,12 @@
   }
 
   function createSnapshot(state, fallbackItems = []) {
-    const visibleItems = hasStoredItems(state) ? state.items : fallbackItems;
+    const shouldUseFallback = !hasStoredItems(state) && state.status !== "loading";
+    const visibleItems = hasStoredItems(state)
+      ? state.items
+      : shouldUseFallback
+        ? fallbackItems
+        : [];
     const sourceCounts = visibleItems.reduce((result, item) => {
       const source = item && item.source ? item.source : "unknown";
       result[source] = (result[source] || 0) + 1;
@@ -33,7 +38,7 @@
       error: state.error,
       items: cloneItems(visibleItems),
       lastLoadedAt: state.lastLoadedAt,
-      source: hasStoredItems(state) ? state.source : "dom",
+      source: hasStoredItems(state) ? state.source : shouldUseFallback ? "dom" : "none",
       sourceCounts,
       status: state.status
     };
@@ -79,20 +84,26 @@
   }
 
   function applyRefreshSuccess(state, apiItems = [], fallbackItems = [], options = {}) {
-    const hasApiItems = Boolean(apiItems.length);
-    const resolvedItems = hasApiItems ? apiItems : fallbackItems;
-
-    state.items = stabilizeVisibleItems(state, resolvedItems, fallbackItems, options);
-    state.source = hasApiItems ? "api" : "dom";
+    state.items = stabilizeVisibleItems(state, apiItems, fallbackItems, options);
+    state.source =
+      options.source ||
+      (apiItems.length
+        ? apiItems.every((item) => item && item.source === "custom")
+          ? "custom"
+          : "api"
+        : "api");
     state.status = "ready";
     state.error = null;
     state.lastLoadedAt = typeof options.now === "number" ? options.now : Date.now();
   }
 
   function applyRefreshFailure(state, fallbackItems = [], error, options = {}) {
-    state.items = stabilizeVisibleItems(state, fallbackItems, fallbackItems, options);
-    state.source = "dom";
-    state.status = fallbackItems.length ? "ready" : "error";
+    const shouldRetainStoredItems = Boolean(options.retainStoredItemsOnFailure && hasStoredItems(state));
+    const resolvedItems = shouldRetainStoredItems ? state.items : fallbackItems;
+
+    state.items = stabilizeVisibleItems(state, resolvedItems, fallbackItems, options);
+    state.source = shouldRetainStoredItems ? state.source || "api" : "dom";
+    state.status = shouldRetainStoredItems || fallbackItems.length ? "ready" : "error";
     state.error = String(error);
     state.lastLoadedAt = typeof options.now === "number" ? options.now : Date.now();
   }
@@ -110,6 +121,7 @@
     cloneItems,
     createSnapshot,
     createState,
+    hasStoredItems,
     resetState,
     shouldRefresh
   };

@@ -91,16 +91,47 @@
     });
   });
 
-  addTest("Phase 6.5 is registered as a disabled roadmap phase flag", () => {
+  addTest("Canvas host detection only activates on real Canvas domains", () => {
+    const cases = [
+      ["canvas.eee.uci.edu", true],
+      ["school.instructure.com", true],
+      ["subdomain.canvas.example.edu", true],
+      ["example.com", false],
+      ["mycanvashelper.com", false],
+      ["portal.instructure-help.com", false]
+    ];
+
+    cases.forEach(([hostname, expected]) => {
+      equal(
+        root.canvas.isCanvasHostname(hostname),
+        expected,
+        `${hostname} should ${expected ? "" : "not "}be treated as a Canvas host.`
+      );
+    });
+  });
+
+  addTest("Bootstrap critical CSS stays empty on non-Canvas hosts", () => {
+    const settings = {
+      ...root.defaults,
+      enabled: true
+    };
+    equal(
+      root.bootstrap.buildCriticalCss(settings, { hostname: "example.com" }),
+      "",
+      "Bootstrap should not inject preload CSS on non-Canvas hosts."
+    );
+  });
+
+  addTest("Phase 6.5 is registered as the current public dashboard visual flag", () => {
     const phase = root.ui.getPhaseDefinitions().find((item) => item.id === "uiPhaseDashboardUiOverhaul");
 
     assert(phase, "The dashboard UI overhaul phase should be registered.");
     equal(phase.label, "Phase 6.5: Dashboard UI overhaul", "Phase 6.5 should have the expected label.");
-    equal(root.defaults.uiPhaseDashboardUiOverhaul, false, "Phase 6.5 should default to disabled.");
+    equal(root.defaults.uiPhaseDashboardUiOverhaul, true, "Phase 6.5 should default to enabled for the public release.");
     equal(
       root.ui.normalizePhaseFlags({}).uiPhaseDashboardUiOverhaul,
       false,
-      "Phase normalization should preserve the disabled Phase 6.5 default."
+      "Raw phase normalization should stay definition-based until settings are merged with public defaults."
     );
   });
 
@@ -340,36 +371,30 @@
       uiLayoutMode: "editorial",
       uiPhaseFocusedPages: true
     };
-    const context = {
-      path: "/courses/101/assignments/7",
-      pageType: "course-assignment-detail",
-      pageFamily: "course",
-      pageRoutePattern: "/courses/:courseId/assignments/:assignmentId",
-      isDashboard: false,
-      isCourse: true,
-      courseId: "101",
-      globalNavKey: "courses"
-    };
 
     try {
       const report = root.featureRegistry.sync({
         settings,
-        context,
-        assignmentSnapshot: {
-          items: [],
-          status: "idle",
-          source: "none"
+        context: {
+          path: "/courses/101/assignments/7",
+          pageType: "course-assignment-detail",
+          pageFamily: "course",
+          pageRoutePattern: "/courses/:courseId/assignments/:assignmentId",
+          isDashboard: false,
+          isCourse: true,
+          courseId: "101",
+          globalNavKey: "courses"
         }
       });
 
       assert(
         report.mountedFeatureIds.includes("focused-page-shell"),
-        "The Phase 7 shell should mount as a diagnostic-only feature."
+        "The focused page shell should mount on supported course pages."
       );
       equal(
         report.featureSnapshots["focused-page-shell"].visualChangesEnabled,
         false,
-        "The Phase 7 shell should not enable visible page changes during the refactor."
+        "The focused page shell should remain a diagnostics-only surface until Phase 7 ships."
       );
     } finally {
       root.featureRegistry.teardown();
@@ -504,6 +529,30 @@
     );
   });
 
+  addTest("Editorial base CSS smooths shared Canvas page title bars into the background", () => {
+    const cssText = root.themeStyles.buildBaseCss({
+      ...root.defaults,
+      enabled: true,
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true
+    });
+
+    assert(
+      cssText.includes(".header-bar") &&
+        cssText.includes(".ic-app-nav-toggle-and-crumbs") &&
+        cssText.includes(".ic-app-main-content__secondary") &&
+        cssText.includes(".module-sequence-footer-content") &&
+        cssText.includes(".item-group-container") &&
+        cssText.includes(".assignment_group") &&
+        cssText.includes(".ig-header") &&
+        cssText.includes(".assignment-list") &&
+        cssText.includes(".header-bar-outer-container") &&
+        cssText.includes(".page-title") &&
+        cssText.includes("background: transparent !important;"),
+      "Editorial base CSS should smooth shared Canvas page title bars into the page background."
+    );
+  });
+
   addTest("Diagnostics expose page context and feature registry state", () => {
     const originalGetPageContext = root.canvas.getPageContext;
     root.canvas.getPageContext = () => ({
@@ -533,7 +582,7 @@
       assert(Array.isArray(report.mountedFeatureIds), "Diagnostics should expose mounted feature ids.");
       equal(
         report.designSystem.phaseDashboardUiOverhaulEnabled,
-        false,
+        true,
         "Diagnostics should report the Phase 6.5 flag state."
       );
       equal(report.designSystem.primitivesStylesheetPresent, true, "Diagnostics should report primitive CSS readiness.");
@@ -548,8 +597,8 @@
       );
       equal(
         report.designSystem.dashboardPrimitiveAdoption.usesDashboardUiOverhaulSelector,
-        false,
-        "Diagnostics should keep Phase 6.5 visual adoption inactive while the flag is off."
+        true,
+        "Diagnostics should reflect active Phase 6.5 visual adoption when the flag is on."
       );
     } finally {
       root.canvas.getPageContext = originalGetPageContext;
@@ -686,6 +735,61 @@
     equal(snapshot.source, "dom", "Fallback snapshots should report the DOM source.");
   });
 
+  addTest("Cold-start assignment snapshots stay in loading state instead of flashing DOM fallback rows", async () => {
+    const originalCreateRefreshContext = root.assignmentRefresh.createRefreshContext;
+    const originalFetchMergedAssignments = root.assignmentRefresh.fetchMergedAssignments;
+    let resolveRequest;
+
+    root.assignments.invalidate();
+    root.assignmentRefresh.createRefreshContext = () => ({
+      options: {},
+      courseNames: {},
+      domFallback: [
+        {
+          title: "Old DOM assignment",
+          courseId: "101",
+          courseName: "Course 101",
+          source: "dom",
+          url: "https://canvas.example.com/courses/101/assignments/7"
+        }
+      ]
+    });
+    root.assignmentRefresh.fetchMergedAssignments = () =>
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      });
+
+    try {
+      const initialSnapshot = root.assignments.ensurePendingAssignments();
+
+      equal(initialSnapshot.status, "loading", "Cold-start loads should immediately enter a loading state.");
+      equal(initialSnapshot.items.length, 0, "Cold-start loads should not flash DOM fallback assignments before refresh completes.");
+      equal(initialSnapshot.source, "none", "Cold-start loads should not claim a DOM source before refresh completes.");
+
+      resolveRequest({
+        mergedItems: [
+          {
+            title: "Fresh API assignment",
+            courseId: "101",
+            courseName: "English 101",
+            source: "api",
+            url: "https://canvas.example.com/courses/101/assignments/8"
+          }
+        ],
+        mergedFallback: []
+      });
+
+      const settledSnapshot = await root.assignments.refreshPendingAssignments();
+      equal(settledSnapshot.status, "ready", "Completed refreshes should still settle into the ready state.");
+      equal(settledSnapshot.items[0].title, "Fresh API assignment", "Completed refreshes should still render the resolved assignment set.");
+      equal(settledSnapshot.source, "api", "Completed refreshes should preserve the resolved snapshot source.");
+    } finally {
+      root.assignmentRefresh.createRefreshContext = originalCreateRefreshContext;
+      root.assignmentRefresh.fetchMergedAssignments = originalFetchMergedAssignments;
+      root.assignments.invalidate();
+    }
+  });
+
   addTest("Store state preserves a previously resolved course name over Course fallback regression", () => {
     const state = root.assignmentStoreState.createState();
     state.items = [
@@ -751,6 +855,78 @@
       "English 101",
       "DOM fallback names should win over generic Course ##### API labels."
     );
+  });
+
+  addTest("Refresh success keeps an empty API result empty instead of reviving DOM fallback rows", () => {
+    const state = root.assignmentStoreState.createState();
+    state.items = [
+      {
+        title: "Older resolved assignment",
+        courseId: "101",
+        courseName: "English 101",
+        source: "api",
+        url: "https://canvas.example.com/courses/101/assignments/7"
+      }
+    ];
+
+    root.assignmentStoreState.applyRefreshSuccess(
+      state,
+      [],
+      [
+        {
+          title: "Stale DOM assignment",
+          courseId: "101",
+          courseName: "English 101",
+          source: "dom",
+          url: "https://canvas.example.com/courses/101/assignments/8"
+        }
+      ],
+      {
+        courseNames: {}
+      }
+    );
+
+    equal(state.items.length, 0, "Successful empty refreshes should stay empty.");
+    equal(state.source, "api", "Successful empty refreshes should still report the API source.");
+  });
+
+  addTest("Refresh failures keep the last known-good assignments during warm refreshes", () => {
+    const state = root.assignmentStoreState.createState();
+    state.items = [
+      {
+        title: "Stable resolved assignment",
+        courseId: "101",
+        courseName: "English 101",
+        source: "api",
+        url: "https://canvas.example.com/courses/101/assignments/7"
+      }
+    ];
+    state.source = "api";
+    state.status = "ready";
+    state.lastLoadedAt = 1_000;
+
+    root.assignmentStoreState.applyRefreshFailure(
+      state,
+      [
+        {
+          title: "Garbage DOM assignment",
+          courseId: "101",
+          courseName: "English 101",
+          source: "dom",
+          url: "https://canvas.example.com/courses/101/assignments/9"
+        }
+      ],
+      new Error("Timed out"),
+      {
+        courseNames: {},
+        retainStoredItemsOnFailure: true
+      }
+    );
+
+    equal(state.items.length, 1, "Warm refresh failures should keep the previously resolved assignments.");
+    equal(state.items[0].title, "Stable resolved assignment", "Warm refresh failures should not swap in stale DOM rows.");
+    equal(state.source, "api", "Warm refresh failures should preserve the previous source.");
+    equal(state.status, "ready", "Warm refresh failures should keep the store in a ready state.");
   });
 
   addTest("Store state refresh policy respects cache age and force refresh", () => {
@@ -1137,6 +1313,47 @@
     }
   });
 
+  addTest("Assignment refresh suppresses DOM fallback rows when Canvas auth is missing", async () => {
+    const originalDom = root.assignmentDom.scrapePendingAssignmentsFromDom;
+    const originalApi = root.assignmentApi.fetchPendingAssignmentsFromApi;
+
+    root.assignmentDom.scrapePendingAssignmentsFromDom = () => [
+      {
+        title: "Stale DOM assignment",
+        courseId: "101",
+        courseName: "English 101",
+        dueSummaryText: "Fri, Apr 10 at 11:59 PM",
+        dueSortValue: 1,
+        source: "dom",
+        url: "https://canvas.example.com/courses/101/assignments/7"
+      }
+    ];
+    root.assignmentApi.fetchPendingAssignmentsFromApi = async () => {
+      throw root.assignmentApi.createCanvasAuthError("Canvas session required.", {
+        status: 401,
+        url: "https://canvas.example.com/login"
+      });
+    };
+
+    try {
+      root.assignments.invalidate();
+      root.authNotice.clearAuthIssue();
+
+      const snapshot = await root.assignments.refreshPendingAssignments({
+        force: true
+      });
+
+      equal(snapshot.items.length, 0, "Auth failures should not revive DOM fallback rows on a cold load.");
+      equal(snapshot.status, "error", "Cold auth failures should settle into an error state.");
+      equal(root.authNotice.getSnapshot().active, true, "Auth failures should leave the session notice active.");
+    } finally {
+      root.assignmentDom.scrapePendingAssignmentsFromDom = originalDom;
+      root.assignmentApi.fetchPendingAssignmentsFromApi = originalApi;
+      root.assignments.invalidate();
+      root.authNotice.clearAuthIssue();
+    }
+  });
+
   addTest("Ignored Canvas assignment keys filter native assignments out of merged results", async () => {
     await resetIgnoredAssignments();
 
@@ -1166,6 +1383,27 @@
 
     equal(filtered.length, 1, "Ignored native assignments should be filtered from merged lists.");
     equal(filtered[0].source, "custom", "Custom assignments should remain visible when native items are ignored.");
+
+    await resetIgnoredAssignments();
+  });
+
+  addTest("Ignored assignment storage can restore all hidden assignments at once", async () => {
+    await resetIgnoredAssignments();
+
+    await root.ignoredAssignments.ignoreAssignmentKey("assignment:101:7");
+    await root.ignoredAssignments.ignoreAssignmentKey("assignment:202:9");
+    equal(
+      (await root.ignoredAssignments.listIgnoredAssignmentKeys()).length,
+      2,
+      "Hidden assignment setup should persist multiple ignored keys."
+    );
+
+    await root.ignoredAssignments.clearIgnoredAssignmentKeys();
+    equal(
+      (await root.ignoredAssignments.listIgnoredAssignmentKeys()).length,
+      0,
+      "Clearing hidden assignments should restore the ignored-assignment list to empty."
+    );
 
     await resetIgnoredAssignments();
   });
@@ -1276,6 +1514,58 @@
     equal(items[0].courseName, "English 101", "Mapped items should preserve course names.");
     equal(items[1].title, "Lab Report", "Mapped items should preserve assignment titles.");
     assert(calls.length === 2, "Planner fetch should follow the next page link.");
+  });
+
+  addTest("Planner auth failures raise a Canvas auth error and activate the session notice", async () => {
+    root.authNotice.clearAuthIssue();
+
+    let thrownError = null;
+    try {
+      await root.assignmentApi.fetchPendingAssignmentsFromApi({
+        fetchImpl: async () => ({
+          ok: false,
+          status: 401,
+          redirected: false,
+          url: "https://canvas.example.com/api/v1/planner/items",
+          headers: {
+            get: (name) => (String(name).toLowerCase() === "content-type" ? "application/json" : null)
+          }
+        })
+      });
+    } catch (error) {
+      thrownError = error;
+    }
+
+    assert(
+      root.assignmentApi.isCanvasAuthError(thrownError),
+      "Planner auth failures should throw a Canvas auth error."
+    );
+    equal(root.authNotice.getSnapshot().active, true, "Planner auth failures should activate the session notice.");
+    equal(root.authNotice.getSnapshot().source, "planner-api", "The session notice should report the planner API source.");
+
+    root.authNotice.clearAuthIssue();
+  });
+
+  addTest("Session notice renders and clears in-page", () => {
+    root.authNotice.clearAuthIssue();
+    root.authNotice.reportAuthIssue({
+      source: "planner-api",
+      status: 401
+    });
+
+    const notice = document.getElementById(root.authNotice.NOTICE_ID);
+    assert(notice, "The auth notice should mount when a session issue is reported.");
+    assert(
+      notice.textContent.includes("Canvas sign-in required"),
+      "The auth notice should explain that Canvas sign-in is required."
+    );
+
+    root.authNotice.clearAuthIssue();
+    equal(
+      document.getElementById(root.authNotice.NOTICE_ID),
+      null,
+      "The auth notice should be removed once the session issue clears."
+    );
   });
 
   addTest("Course nav selectors find hidden left tabs by course", () => {
@@ -1431,7 +1721,7 @@
         uiPhaseLeftRailSimplification: true
       },
       `
-        <nav id="menu">
+        <nav id="menu" style="width: 64px;">
           <a id="global_nav_dashboard_link" href="/">
             <div class="menu-item-icon-container ic-app-header__menu-list-item--active">
               <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v8H1z"></path></svg>
@@ -1467,6 +1757,23 @@
     }
   });
 
+  addTest("Left rail restores nav labels when Canvas marks the rail as expanded", () => {
+    const cssText = root.themeStyles.buildBaseCss({
+      uiLayoutMode: "editorial",
+      uiPhaseTypographyReset: true,
+      uiPhaseLeftRailSimplification: true
+    });
+
+    assert(
+      cssText.includes("body.primary-nav-expanded #menu .menu-item-container") &&
+        cssText.includes("body.primary-nav-expanded #menu,\n      html.blank-canvas--layout-editorial.blank-canvas--phase-left-rail-simplification body.primary-nav-expanded .ic-app-header {\n        width: 88px !important;") &&
+        cssText.includes("flex-direction: column !important;") &&
+        cssText.includes("text-align: center !important;") &&
+        cssText.includes("body.primary-nav-expanded #menu .menu-item__text {\n        display: block !important;"),
+      "Expanded left rails should restore labels from Canvas' primary-nav-expanded state and stack them beneath the icons."
+    );
+  });
+
   addTest("Active left rail overlay applies to list-item active state without changing icon hue", () => {
     const mounted = mountStyledFixture(
       {
@@ -1499,14 +1806,20 @@
     );
 
     try {
+      const activeItem = mounted.fixture.querySelector("#global_nav_courses_link").closest("li");
       const activeContainer = mounted.fixture.querySelector("#global_nav_courses_link .menu-item-icon-container");
       const activeStyle = window.getComputedStyle(activeContainer);
+      const activeItemStyle = window.getComputedStyle(activeItem);
       const activeSvg = mounted.fixture.querySelector("#global_nav_courses_link svg");
       const inactiveSvg = mounted.fixture.querySelector("#global_nav_calendar_link svg");
 
       assert(
         hasOverlayBackground(activeStyle),
         "Active rail items should render a visible selected overlay on the icon container."
+      );
+      assert(
+        isTransparentColor(activeItemStyle.backgroundColor),
+        "Active rail list-item wrappers should stay transparent so only the inner tile is highlighted."
       );
       equal(
         normalizeColor(window.getComputedStyle(activeSvg).fill),
@@ -1588,8 +1901,8 @@
       );
       equal(
         activeStyle.borderLeftWidth,
-        "2px",
-        "Button-based active rail items should receive the shared left marker."
+        "0px",
+        "Button-based active rail items should not keep the legacy left marker."
       );
       equal(
         normalizeColor(window.getComputedStyle(activeSvg).fill),
@@ -1641,8 +1954,12 @@
       );
       equal(
         selectedItemStyle.borderLeftWidth,
-        "2px",
-        "Route-selected global nav ids should receive the left marker."
+        "0px",
+        "Route-selected global nav ids should not receive the legacy left marker."
+      );
+      assert(
+        isTransparentColor(selectedItemStyle.backgroundColor),
+        "Route-selected outer rail wrappers should stay transparent so only the inner tile is highlighted."
       );
       equal(
         window.getComputedStyle(unselected).borderLeftWidth,
@@ -1655,7 +1972,7 @@
     }
   });
 
-  addTest("Dashboard rail tile keeps only one outer marker cue", () => {
+  addTest("Dashboard rail tile drops the leftover outer marker cue", () => {
     const mounted = mountStyledFixture(
       {
         uiLayoutMode: "editorial",
@@ -1682,13 +1999,13 @@
 
       equal(
         window.getComputedStyle(outerContainer).borderLeftWidth,
-        "2px",
-        "The outer active rail container should keep the single selection border."
+        "0px",
+        "The outer active Dashboard rail container should not keep the legacy selection border."
       );
       equal(
         window.getComputedStyle(innerContainer).borderLeftWidth,
         "0px",
-        "The inner Dashboard icon tile should not draw a second selection border."
+        "The inner Dashboard icon tile should also remain free of the legacy selection border."
       );
     } finally {
       mounted.cleanup();
@@ -1827,15 +2144,23 @@
   });
 
   addTest("Bootstrap critical CSS preloads key dashboard hide rules", () => {
-    const cssText = root.bootstrap.buildCriticalCss({
-      ...root.defaults,
-      enabled: true,
-      previewMode: false
-    });
+    const cssText = root.bootstrap.buildCriticalCss(
+      {
+        ...root.defaults,
+        enabled: true,
+        previewMode: false
+      },
+      {
+        hostname: "canvas.eee.uci.edu"
+      }
+    );
 
     assert(cssText.includes(".ic-DashboardCard__header-button-bg"), "Bootstrap CSS should hide the menu background.");
     assert(cssText.includes(".ic-DashboardCard__action-container"), "Bootstrap CSS should hide the action row.");
     assert(cssText.includes("#right-side-wrapper"), "Bootstrap CSS should preload the dashboard sidebar hide.");
+    assert(cssText.includes("var(--blank-canvas-page-background)"), "Bootstrap CSS should preload the page background token.");
+    assert(cssText.includes(".ic-app-header__menu-list"), "Bootstrap CSS should preload the left-rail surface.");
+    assert(cssText.includes("--blank-canvas-color-text"), "Bootstrap CSS should preload the primary text color token.");
   });
 
   addTest("Bootstrap critical CSS preloads saved course tabs on course pages", () => {
@@ -1847,6 +2172,7 @@
         }
       },
       {
+        hostname: "canvas.eee.uci.edu",
         courseId: "101"
       }
     );

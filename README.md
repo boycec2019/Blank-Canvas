@@ -1,37 +1,35 @@
 # Blank Canvas
 
-Blank Canvas is a Chrome extension that reduces clutter inside Canvas with a minimalist, student-friendly dashboard.
+Blank Canvas is a Chrome extension that reduces clutter inside Canvas with a minimalist, student-friendly dashboard and a UI overhaul.
 
-## React scaffold
+## Features
 
-React is scaffolded for extension-owned UI, but no live surfaces have been migrated yet.
+### Custom dashboard
+At the core of the extension, the dashboard has been revamped with an assignments tracker and quick links to classes. The assignments tracker scrapes Canvas assignments from all your classes and lists them neatly by due date. Additionally, the display allows you to mark assignments as done.
+![custom dash](dashboardfront.png)
 
-The bridge source lives in [src/react/bridge.js](src/react/bridge.js) and the bundled runtime loaded by the extension is generated at [src/generated/react-bridge.js](src/generated/react-bridge.js).
+### Custom assignment creation
+Have an assignment your teacher verbally mentioned in class but never posted a Canvas assignment for? Create your own assignment to keep yourself on track.
+![custom assignments](custom_assignments.png)
 
-Rebuild the bundled bridge with:
+### Right-click to hide
+Right click on any unwanted sidebar items or old assignments to hide them from view. Any hidden items can be restored through the settings menu. 
+![rc-hide](hide_unneccessary_tabs.png)
 
-```powershell
-cmd /c npm run build:react
-```
+### UI Overhaul
+UI changes that clean up the page look and hide many low-use buttons in default Canvas from view. Hidden buttons can be restored through the settings menu.
 
-The current bridge exposes `BlankCanvas.react` for future dashboard/modal migrations while leaving the existing Canvas scraping and DOM patching code in plain JavaScript.
+## Installing
+Search for "Blank Canvas" on the Chrome web store.
 
-## Testing
+## FAQ
+- Where do I find the settings menu?
+  - Click the puzzle piece icon to the right of the URL on your Chrome page. Click on the the Blank Canvas extension, then click Settings in the top right corner.
+- Can Blank Canvas help to hide my old classes from view?
+  - Canvas actually has a built-in feature to do so! Go to Courses -> All Courses, and star only the classes you want in your dashboard view. The unstarred classes will disappear from view.
 
-Run the browser fixture suite with:
-
-```powershell
-python tests\run_browser_tests.py
-```
-
-The suite covers DOM helpers plus UI smoke tests for fragile Canvas-specific behavior such as dashboard header chrome, left-rail selection treatment, and collapsed-nav label hiding.
-
-## Real Canvas smoke tests
-
-A Playwright scaffold for inspecting the real logged-in Canvas page lives in [tests/real-canvas/SETUP.md](tests/real-canvas/SETUP.md).
-
-It is meant for:
-
-- checking the live Canvas DOM instead of fixtures
-- verifying computed styles on real routes
-- comparing screenshots of fragile UI regions like the left rail
+## Authors
+[Boyce Chow](https://github.com/boycec2019)
+## Changelog
+- v1.0.0
+  - Released :partying_face:

@@ -13,7 +13,9 @@
           <p class="eyebrow">Canvas declutter</p>
           <h1>Blank Canvas</h1>
         </div>
-        <button type="button" id="open-options">Options</button>
+        <div class="popup-header-actions">
+          <button type="button" id="open-settings" class="secondary quiet-button">Settings</button>
+        </div>
       </header>
 
       <section class="panel todo-panel">
@@ -30,21 +32,6 @@
         <ul id="todo-list" class="todo-list" aria-live="polite">
           <li class="todo-empty">Looking for assignments...</li>
         </ul>
-      </section>
-
-      <section class="panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">UI rollout</p>
-            <h2>Layout mode</h2>
-          </div>
-        </div>
-        <label class="stacked-field" for="uiLayoutMode">
-          <strong>Canvas UI mode</strong>
-          <small>Use Options for individual phase switches while the redesign rolls out.</small>
-        </label>
-        <select id="uiLayoutMode" name="uiLayoutMode"></select>
-        <p id="ui-phase-summary" class="helper-text">No redesign phases are active.</p>
       </section>
 
       <section class="panel">
@@ -105,32 +92,8 @@
         </label>
       </section>
 
-      <section class="panel">
-        <label class="toggle-row">
-          <span>
-            <strong>Debug mode</strong>
-            <small>Turns on console logs and richer reports.</small>
-          </span>
-          <input type="checkbox" name="debugMode">
-        </label>
-
-        <label class="toggle-row">
-          <span>
-            <strong>Preview mode</strong>
-            <small>Highlights matched elements instead of hiding them.</small>
-          </span>
-          <input type="checkbox" name="previewMode">
-        </label>
-      </section>
-
       <section class="panel actions">
-        <button type="button" id="run-diagnostics">Run diagnostics</button>
         <button type="button" id="reset-settings" class="secondary">Reset</button>
-      </section>
-
-      <section class="panel diagnostics">
-        <p id="status-text">Ready.</p>
-        <pre id="diagnostics-output">No diagnostics run yet.</pre>
       </section>
     </main>
 

@@ -61,9 +61,8 @@
     }
 
     return [
-      `${listItemSelector} > ${linkSelector}`,
-      `${listItemSelector} > ${linkSelector} > .menu-item-icon-container`,
-      `${listItemSelector} > ${linkSelector} .menu-item-icon-container`
+      `${listItemSelector} > ${linkSelector}:is(button)`,
+      `${listItemSelector} > ${linkSelector} > .menu-item-icon-container`
     ];
   }
 

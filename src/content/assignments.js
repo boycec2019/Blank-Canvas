@@ -36,6 +36,14 @@
     return /extension context invalidated/i.test(String(error || ""));
   }
 
+  function isCanvasAuthError(error) {
+    return Boolean(
+      root.assignmentApi && typeof root.assignmentApi.isCanvasAuthError === "function"
+        ? root.assignmentApi.isCanvasAuthError(error)
+        : false
+    );
+  }
+
   function applyStaleContextFallback(context, error) {
     const completedDomFallback = root.assignmentRefresh.applyCompletedAssignments(
       context.domFallback,
@@ -59,6 +67,7 @@
     }
 
     const context = root.assignmentRefresh.createRefreshContext(options);
+    const hadStoredItems = root.assignmentStoreState.hasStoredItems(state);
     root.assignmentStoreState.beginRefresh(state);
 
     const request = root.assignmentRefresh
@@ -76,10 +85,31 @@
           return applyStaleContextFallback(context, error);
         }
 
+        if (isCanvasAuthError(error)) {
+          if (root.authNotice && typeof root.authNotice.reportAuthIssue === "function") {
+            root.authNotice.reportAuthIssue({
+              source: "assignment-refresh",
+              status: Number(error && error.status ? error.status : 0),
+              url: (error && error.url) || "",
+              message:
+                (error && error.message) ||
+                "Canvas session required. Blank Canvas could not refresh assignments. Refresh this page or sign in to Canvas again."
+            });
+          }
+          root.assignmentStoreState.applyRefreshFailure(state, [], error, {
+            ...context.options,
+            courseNames: context.courseNames,
+            retainStoredItemsOnFailure: hadStoredItems
+          });
+          emit([]);
+          return getSnapshot([]);
+        }
+
         return root.assignmentRefresh.fetchFallbackWithCustom(context).then(({ mergedFallback }) => {
           root.assignmentStoreState.applyRefreshFailure(state, mergedFallback, error, {
             ...context.options,
-            courseNames: context.courseNames
+            courseNames: context.courseNames,
+            retainStoredItemsOnFailure: hadStoredItems
           });
           emit(mergedFallback);
           return getSnapshot(mergedFallback);
@@ -90,32 +120,34 @@
       });
 
     state.inFlight = request;
-    Promise.all([
-      root.assignmentRefresh.listCustomPendingAssignments(options),
-      root.ignoredAssignments ? root.ignoredAssignments.listIgnoredAssignmentKeys() : Promise.resolve([]),
-      root.completedAssignments ? root.completedAssignments.listCompletedAssignmentStates() : Promise.resolve([])
-    ])
-      .then(([customItems, ignoredKeys, completedStates]) => {
-        context.completedStates = completedStates;
-        const provisionalItems = root.assignmentRefresh.buildProvisionalFallback(
-          context,
-          customItems,
-          ignoredKeys,
-          completedStates
-        );
-        root.assignmentStoreState.applyProvisionalFallback(state, provisionalItems, {
-          ...context.options,
-          courseNames: context.courseNames
+    if (hadStoredItems) {
+      Promise.all([
+        root.assignmentRefresh.listCustomPendingAssignments(options),
+        root.ignoredAssignments ? root.ignoredAssignments.listIgnoredAssignmentKeys() : Promise.resolve([]),
+        root.completedAssignments ? root.completedAssignments.listCompletedAssignmentStates() : Promise.resolve([])
+      ])
+        .then(([customItems, ignoredKeys, completedStates]) => {
+          context.completedStates = completedStates;
+          const provisionalItems = root.assignmentRefresh.buildProvisionalFallback(
+            context,
+            customItems,
+            ignoredKeys,
+            completedStates
+          );
+          root.assignmentStoreState.applyProvisionalFallback(state, provisionalItems, {
+            ...context.options,
+            courseNames: context.courseNames
+          });
+          emit(provisionalItems);
+        })
+        .catch(() => {
+          root.assignmentStoreState.applyProvisionalFallback(state, context.domFallback, {
+            ...context.options,
+            courseNames: context.courseNames
+          });
+          emit(context.domFallback);
         });
-        emit(provisionalItems);
-      })
-      .catch(() => {
-        root.assignmentStoreState.applyProvisionalFallback(state, context.domFallback, {
-          ...context.options,
-          courseNames: context.courseNames
-        });
-        emit(context.domFallback);
-      });
+    }
 
     return request;
   }

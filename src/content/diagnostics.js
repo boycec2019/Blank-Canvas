@@ -147,6 +147,7 @@
     const customAssignmentModal = root.customAssignmentModal
       ? root.customAssignmentModal.getSnapshot()
       : null;
+    const authNotice = root.authNotice ? root.authNotice.getSnapshot() : null;
     const reactBridge = root.react && typeof root.react.getSnapshot === "function"
       ? root.react.getSnapshot()
       : {
@@ -214,6 +215,7 @@
       dashboardLayout,
       dashboardTodo,
       customAssignmentModal,
+      authNotice,
       reactBridge,
       designSystem: getDesignSystemSnapshot(settings, context, dashboardLayout, dashboardTodo),
       mountedFeatureIds: featureRegistry ? featureRegistry.mountedFeatureIds : [],

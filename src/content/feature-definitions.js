@@ -24,6 +24,25 @@
   });
 
   root.featureRegistry.register({
+    id: "canvas-session-notice",
+    isEnabled: () => true,
+    mount() {
+      return root.authNotice ? root.authNotice.sync() : null;
+    },
+    teardown() {
+      if (root.authNotice) {
+        root.authNotice.teardown();
+      }
+    },
+    getSnapshot() {
+      return root.authNotice ? root.authNotice.getSnapshot() : null;
+    },
+    getStyles() {
+      return root.authNotice ? root.authNotice.getStyles() : "";
+    }
+  });
+
+  root.featureRegistry.register({
     id: "course-nav-cleanup",
     isEnabled: (settings, context) => Boolean(context.isCourse && settings.hiddenCourseNavItems),
     mount(settings) {

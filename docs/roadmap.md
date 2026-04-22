@@ -246,7 +246,7 @@ Status: implemented.
 
 What this phase means:
 
-- turn the dashboard into the reference implementation for the extension's visual system
+- turn the dashboard into the reference implementation for the extension's visual t
 - polish the existing core surfaces without adding new concepts
 - extract reusable UI primitives before Phase 7 expands to more pages
 
