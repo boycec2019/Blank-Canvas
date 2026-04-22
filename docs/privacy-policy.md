@@ -95,5 +95,5 @@ This Privacy Policy may be updated from time to time. If the policy changes, the
 
 ## Contact
 
-If you publish Blank Canvas with a public support email or project page, add that contact information here before release.
+boycec2019@gmail.com
 
